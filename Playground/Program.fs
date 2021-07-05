@@ -9,6 +9,24 @@ type Point = {
     Y: int
 }
 
+// An interface for all types of players, either human players or AI players
+type IPlayer =
+    abstract member NextMove : board: Point array -> Point
+
+type KeyboardPlayer =
+    interface IPlayer with
+        member this.NextMove(board: Point[]) =
+            Console.WriteLine("Press a key to move")
+            let newMove =
+                let key = Console.ReadKey()
+                match key.Key with
+                | ConsoleKey.UpArrow -> { X = 0; Y = -1 }
+                | ConsoleKey.DownArrow -> { X = 0; Y = 1 }
+                | ConsoleKey.RightArrow -> { X = 1; Y = 0 }
+                | ConsoleKey.LeftArrow -> { X = -1; Y = 0 }
+                | _ -> failwith "Invalid move"
+            newMove
+
 // Define a function to construct a message to print
 let from whom =
     $"from {whom}" // requires F# 5.0!
