@@ -11,7 +11,7 @@ type Point = {
 
 // Define a function to construct a message to print
 let from whom =
-    sprintf "from %s" whom
+    $"from {whom}" // requires F# 5.0!
 
 [<EntryPoint>]
 let main argv =
