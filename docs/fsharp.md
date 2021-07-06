@@ -11,9 +11,11 @@ To run the REPL, use `dotnet fsi`.
 
 ## Parsing libraries
 
-## GUI libraries
+## Cross platform GUI libraries
 
-TODO: Something cross platform.
+- [Avalonia FuncUI](https://github.com/fsprojects/Avalonia.FuncUI). Allows writing an Elm-style UI (MVU). The documentation for the MVU parts appears to be the source code, and it doesn't cover all of Avalonia's vast API. How big are the dependencies?
+- [Fabulous for Xamarin.Forms](https://github.com/fsprojects/Fabulous). Allows writing an Elm-style UI (MVU). Looks production-ready and well documented. How big are the dependencies?
+- [Elmish.WPF](https://github.com/elmish/Elmish.WPF). Advertises MVU but actually requires the UI to be statically described in an XML-based format.
 
 ## Machine learning libraries
 
