@@ -1,15 +1,5 @@
 # Tools installation
 
-## Git
-
-Download and install Git for your system.
-- Windows: [git-scm.com/downloads]. In the install wizard:
-    * Deselect Explorer integration (We'll use Git inside VSCode only).
-    * Select "Use Visual Studio Code as default editor"
-    * Select "Override the default branch name for new repositories", keeping
-      the suggested `main` (for compatibility with GitHub).
-    * Keep other defaults.
-
 ## Visual Studio Code
 
 Install Visual Studio Code, version 1.57 or higher.
@@ -17,7 +7,17 @@ Install Visual Studio Code, version 1.57 or higher.
   `code` package: it's outdated at the time of writing this, and the Open VSX
   version of the C# extension is out of date and needs to be rebuilt from
   `master`.
-- Windows: [code.visualstudio.com].
+- Windows: [https://code.visualstudio.com].
+
+## Git
+
+Download and install Git for your system.
+- Windows: [https://git-scm.com/downloads]. In the install wizard:
+    * Deselect Explorer integration (We'll use Git inside VSCode only).
+    * Select "Use Visual Studio Code as default editor"
+    * Select "Override the default branch name for new repositories", keeping
+      the suggested `main` (for compatibility with GitHub).
+    * Keep other defaults, as you like.
 
 ## Checking out the repository
 
