@@ -40,4 +40,6 @@ let main argv =
     printfn "pJSON = %s" pJSON
     let p' : Point = JsonSerializer.Deserialize pJSON
     printfn "p' =\n%A" p'
+    Pathfinding.markShortestPath ()
+    Pathfinding.printBoard ()
     0 // return an integer exit code
