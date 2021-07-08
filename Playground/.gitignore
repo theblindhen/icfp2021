@@ -1,5 +1,3 @@
-/obj
-/bin
 WhileLexer.fs
 WhileParser.fs
 WhileParser.fsi
