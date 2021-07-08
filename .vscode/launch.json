@@ -4,12 +4,35 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Launch Playground (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build_debug",
             "program": "${workspaceFolder}/Playground/bin/Debug/net5.0/Playground.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Launch Playground (Release)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build_release",
+            "program": "${workspaceFolder}/Playground/bin/Release/net5.0/Playground.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Launch HelloWorld (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build_debug",
+            "program": "${workspaceFolder}/HelloWorld/bin/Debug/net5.0/HelloWorld.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
