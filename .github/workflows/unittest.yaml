@@ -1,0 +1,12 @@
+name: Run unittests
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dotnet-tests-report
+        uses: zyborg/dotnet-tests-report@v1.4.4
+        with:
+          project_path: /
+          report_name: unittest_report
+          report_title: UnitTest Report
+          github_token: ${{ secrets.GITHUB_TOKEN }}
