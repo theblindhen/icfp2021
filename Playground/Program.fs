@@ -2,6 +2,9 @@
 
 open System
 open System.Text.Json
+open ExtCore.Args
+
+open MyLib
 
 [<Struct>]
 type Point = {
@@ -31,10 +34,24 @@ type KeyboardPlayer =
 let from whom =
     $"from {whom}" // requires F# 5.0!
 
+// Play with command line arguments
+let outputName = ref "a.out"
+let verbose = ref false
+let warningLevel = ref 0
+let compile s = printfn "Compiling %s..." s
+let argSpecs =
+    [ "-o", ArgType.String (fun s -> outputName := s), "Output file"
+    ; "-v", ArgType.Unit (fun () -> verbose := true), "Set verbose"
+    ; "-w", ArgType.Int (fun i -> warningLevel := i), "Warning level"
+    ; "--", ArgType.Rest compile, "Stop parsing command line"
+    ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
+      |> Array.ofList
+
 [<EntryPoint>]
 let main argv =
-    let message = from "F#" // Call the function
-    printfn "Hello world %s" message
+    ArgParser.Parse(argSpecs, compile)
+    let message = from "F#" // Call local function
+    printfn $"Arguments parsed were\n\toutputName={!outputName}\n\tverbose={!verbose}\n\twarningLevel={!warningLevel}"
     let p = { X = 11; Y = 22 }
     let pJSON = JsonSerializer.Serialize p
     printfn "pJSON = %s" pJSON
@@ -42,4 +59,5 @@ let main argv =
     printfn "p' =\n%A" p'
     Pathfinding.markShortestPath ()
     Pathfinding.printBoard ()
+    Say.libHello "console program"
     0 // return an integer exit code

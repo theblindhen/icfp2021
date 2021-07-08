@@ -70,3 +70,7 @@ Shift+F5, you may need to install the extension `vscode-solution-explorer`.
 Now you may also install the GitHub Copilot extension. After you do this,
 restart VSCode and sign in to GitHub. Activate Copilot by clicking its red icon
 in the lower right corner of the VSCode window.
+
+# F\# Tips
+
+Be sure to read [docs/fsharp.md](docs/fsharp.md)!

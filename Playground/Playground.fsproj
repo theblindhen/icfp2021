@@ -10,4 +10,12 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MyLib\MyLib.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ExtCore" Version="0.8.46" />
+  </ItemGroup>
+
 </Project>
