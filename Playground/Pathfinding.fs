@@ -56,10 +56,7 @@ let array2Dfind predicate array =
         (array2DSequence array)
 
 let markShortestPath () =
-    let width = Array2D.length1 boardArray2D
-    let height = Array2D.length2 boardArray2D
     let (startx, starty, _) = array2Dfind (fun c -> c = 's') boardArray2D
-    let (finishx, finishy, _) = array2Dfind (fun c -> c = 'f') boardArray2D
     // The predecessor map should probably be an array, but I'm trying a HashSet
     // just to explore the API.
     let predecessor = System.Collections.Generic.Dictionary()
