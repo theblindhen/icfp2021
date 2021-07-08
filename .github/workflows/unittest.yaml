@@ -4,10 +4,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: dotnet-tests-report
+      - name: setup-dotnet
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.x'
+      - name: dotnet-tests-report
         uses: zyborg/dotnet-tests-report@v1.4.4
         with:
           project_path: UnitTests
