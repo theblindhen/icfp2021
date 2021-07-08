@@ -1,6 +1,18 @@
-# F# Notes
+# Running F# code
 
-To run the REPL, use `dotnet fsi`.
+* To run the REPL for quick experiments, use `dotnet fsi`.
+
+* To run the project using VSCode's debugger, press F5, optionally after
+  selecting a target by clicking the Debug-button in the left-hand-side palette.
+  When using a Debug target, execution will stop at breakpoints that you insert
+  in the code.
+
+* To run the project in the terminal, type something like:
+
+```
+> dotnet run -c Release --project Playground/Playground.fsproj
+```
+  
 
 ## F# Projects
 
@@ -20,7 +32,7 @@ Go to the Solution Explorer (you will need to install `vscode-solution-explorer`
 extension), right-click on the solution and select `Add existing project`.
 Select the newly created project.
 
-Open `launch.md` to set up launch targets.
+Open `launch.json` to set up launch targets.
 
 To use a library project in a console project, we need to set up project
 references: click the F# button in the left-hand-side palette. Expand your
