@@ -11,6 +11,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MyLib", "MyLib\MyLib.fsproj
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Counter", "Counter\Counter.fsproj", "{B6361E4A-EFFD-4E1D-9BF0-10F56F154499}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UnitTests", "UnitTests\UnitTests.fsproj", "{09E16DC6-32F9-46D6-9587-3255B7F77906}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,17 @@ Global
 		{B6361E4A-EFFD-4E1D-9BF0-10F56F154499}.Release|x64.Build.0 = Release|Any CPU
 		{B6361E4A-EFFD-4E1D-9BF0-10F56F154499}.Release|x86.ActiveCfg = Release|Any CPU
 		{B6361E4A-EFFD-4E1D-9BF0-10F56F154499}.Release|x86.Build.0 = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|x64.Build.0 = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Debug|x86.Build.0 = Debug|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|x64.ActiveCfg = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|x64.Build.0 = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|x86.ActiveCfg = Release|Any CPU
+		{09E16DC6-32F9-46D6-9587-3255B7F77906}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
