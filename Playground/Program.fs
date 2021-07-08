@@ -3,6 +3,8 @@
 open System
 open System.Text.Json
 
+open MyLib
+
 [<Struct>]
 type Point = {
     X: int
@@ -40,4 +42,5 @@ let main argv =
     printfn "pJSON = %s" pJSON
     let p' : Point = JsonSerializer.Deserialize pJSON
     printfn "p' =\n%A" p'
+    Say.libHello "console program"
     0 // return an integer exit code

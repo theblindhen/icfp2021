@@ -4,11 +4,16 @@ To run the REPL, use `dotnet fsi`.
 
 ## F# Projects
 
-To make a new console project (stand-alone executable) in the solution, go to
-the solution's base folder and type 
+To make a new console project (stand-alone executable) in the solution, go to the solution's base folder and type:
 
 ```
-> dotnet new console -lang "F#"  -n "HelloWorld" -o HelloWorld 
+> dotnet new console -lang "F#"  -n "HelloWorld"
+```
+
+To make a new class library project, instead run: 
+
+```
+> dotnet new classlib -lang "F#"  -n "MyLib"
 ```
 
 Go to the Solution Explorer (you will need to install `vscode-solution-explorer`
@@ -16,6 +21,13 @@ extension), right-click on the solution and select `Add existing project`.
 Select the newly created project.
 
 Open `launch.md` to set up launch targets.
+
+To use a library project in a console project, we need to set up project
+references: click the F# button in the left-hand-side palette. Expand your
+console application, and its `Project References`. Right-click and select "Add
+project references". Select your library project.
+You can now use the library in any of the files of the console project using
+`Open <library-name>`. Rebuilding of the library happens automatically.
 
 ## Graph libraries
 
