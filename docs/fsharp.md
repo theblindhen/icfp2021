@@ -41,6 +41,12 @@ project references". Select your library project.
 You can now use the library in any of the files of the console project using
 `Open <library-name>`. Rebuilding of the library happens automatically.
 
+## Dependencies
+
+To add a package dependency to a project, go to the Solution Explorer,
+right-click on the project, and choose Add package. VSCode will prompt you for a package name and allows you to supply a version number. Your VSCode terminal must be ready at an empty command line when you run this. This will download the package from [NuGet](https://www.nuget.org) and insert it as a dependency in your project. You can then aftewards `Open <library>` in an F# file.
+
+
 ## Graph libraries
 
 - [Kts.AStar.Smartrak](https://www.nuget.org/packages/Kts.AStar.Smartrak/). A* only. Appears to have everything: good data structures, tests, arbitrary node type, implicit graphs, cancellable async.
