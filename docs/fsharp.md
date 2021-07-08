@@ -58,6 +58,10 @@ right-click on the project, and choose Add package. VSCode will prompt you for a
 
 TODO
 
+## Network and JSON serialisation
+
+TODO
+
 ## Cross platform GUI libraries
 
 - [Avalonia FuncUI](https://github.com/fsprojects/Avalonia.FuncUI). Allows writing an Elm-style UI (MVU). The documentation for the MVU parts appears to be the source code, and it doesn't cover all of Avalonia's vast API. How big are the dependencies?
