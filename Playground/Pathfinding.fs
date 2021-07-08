@@ -55,11 +55,9 @@ let array2Dfind predicate array =
         (fun (_, _, value) -> predicate value)
         (array2DSequence array)
 
-let markShortestPath () =
-    let width = Array2D.length1 boardArray2D
-    let height = Array2D.length2 boardArray2D
+// Naive pathfinding algorithm
+let markShortestPathBFS () =
     let (startx, starty, _) = array2Dfind (fun c -> c = 's') boardArray2D
-    let (finishx, finishy, _) = array2Dfind (fun c -> c = 'f') boardArray2D
     // The predecessor map should probably be an array, but I'm trying a HashSet
     // just to explore the API.
     let predecessor = System.Collections.Generic.Dictionary()
@@ -95,6 +93,30 @@ let markShortestPath () =
     | Some (x, y) ->
     printfn "Reconstructing path"
     markPredFrom (x, y)
+
+// Pathfinding using A* from the Kts.AStar.Smartrak library.
+let markShortestPathAStar () =
+    let (startx, starty, _) = array2Dfind (fun c -> c = 's') boardArray2D
+    let (finishx, finishy, _) = array2Dfind (fun c -> c = 'f') boardArray2D
+    printfn "Starting search"
+    let path =
+        Kts.AStar.AStarUtilities.FindMinimalPath(
+            startingPosition = (startx, starty),
+            endingPosition = (finishx, finishy),
+            getNeighbors = (fun (x,y) ->
+                seq [(x+1, y); (x,y+1); (x-1, y); (x, y-1)]
+                |> Seq.filter (fun (x',y') -> boardArray2D.[x',y'] <> 's')
+                |> Seq.filter (fun (x',y') -> boardArray2D.[x',y'] <> '#')
+            ),
+            getScoreBetween = (fun (x1,y1) (x2,y2) -> float (abs(x1-x2) + abs(y1-y2))),
+            getHeuristicScore = (fun (x,y) -> float (abs(x-finishx) + abs(y-finishy)))
+        ).Result
+    printfn "Reconstructing path"
+    path
+    |> Seq.iter (fun (x, y) ->
+        if boardArray2D.[x, y] = ' ' then
+            boardArray2D.[x, y] <- 'o'
+    )
 
 let printBoard () =
     for y in 0 .. Array2D.length2 boardArray2D - 1 do

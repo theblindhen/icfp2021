@@ -30,6 +30,7 @@
   <ItemGroup>
     <PackageReference Include="ExtCore" Version="0.8.46" />
     <PackageReference Include="FsLexYacc" Version="10.2.0" />
+    <PackageReference Include="Kts.AStar.Smartrak" Version="1.2.1" />
   </ItemGroup>
 
 </Project>

@@ -72,8 +72,8 @@ let main argv =
     let p' : Point = JsonSerializer.Deserialize pJSON
     printfn "p' =\n%A" p'
 
-    // Path finding on the board
-    Pathfinding.markShortestPath ()
+    // Pathfinding on the board
+    Pathfinding.markShortestPathAStar ()
     Pathfinding.printBoard ()
 
     Say.libHello "console program"

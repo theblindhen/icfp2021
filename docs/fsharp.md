@@ -65,6 +65,12 @@ TODO
 ## Cross platform GUI libraries
 
 - [Avalonia FuncUI](https://github.com/fsprojects/Avalonia.FuncUI). Allows writing an Elm-style UI (MVU). The documentation for the MVU parts appears to be the source code, and it doesn't cover all of Avalonia's vast API. How big are the dependencies?
+  - has a canvas control that supports free-form drawing ([example](https://github.com/fsprojects/Avalonia.FuncUI/blob/master/src/Examples/Examples.ClockApp/Clock.fs))
+  - install Avalonia.FuncUI templates and create a new app using the basic template:
+      ```
+      > dotnet new --install JaggerJo.Avalonia.FuncUI.Templates
+      > dotnet new funcui.basic -n NewApp
+      ```
 - [Fabulous for Xamarin.Forms](https://github.com/fsprojects/Fabulous). Allows writing an Elm-style UI (MVU). Looks production-ready and well documented. How big are the dependencies?
 - [Elmish.WPF](https://github.com/elmish/Elmish.WPF). Advertises MVU but actually requires the UI to be statically described in an XML-based format.
 
