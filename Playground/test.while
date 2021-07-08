@@ -1,0 +1,14 @@
+var a;
+a := 3;
+var b;
+read b;
+if a + b < 5 then
+    a := a + 1;
+    b := b + 1
+else
+    while a + b < 5 do
+    begin
+        a := a + 1
+    end
+fi;
+write a + b

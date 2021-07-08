@@ -6,6 +6,8 @@ open ExtCore.Args
 
 open MyLib
 
+open FSharp.Text.Lexing
+
 [<Struct>]
 type Point = {
     X: int
@@ -35,29 +37,44 @@ let from whom =
     $"from {whom}" // requires F# 5.0!
 
 // Play with command line arguments
-let outputName = ref "a.out"
+let inputName = ref "Playground/test.while"
 let verbose = ref false
 let warningLevel = ref 0
 let compile s = printfn "Compiling %s..." s
 let argSpecs =
-    [ "-o", ArgType.String (fun s -> outputName := s), "Output file"
+    [ "-i", ArgType.String (fun s -> inputName := s), "Input while program"
     ; "-v", ArgType.Unit (fun () -> verbose := true), "Set verbose"
     ; "-w", ArgType.Int (fun i -> warningLevel := i), "Warning level"
     ; "--", ArgType.Rest compile, "Stop parsing command line"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
+// Call the WhileParser on the file inputName
+let parseWhile file =
+  let source = System.IO.File.ReadAllText(file)
+  let lexbuf = LexBuffer<char>.FromString source
+  WhileParser.start WhileLexer.token lexbuf
+  
 [<EntryPoint>]
 let main argv =
     ArgParser.Parse(argSpecs, compile)
     let message = from "F#" // Call local function
-    printfn $"Arguments parsed were\n\toutputName={!outputName}\n\tverbose={!verbose}\n\twarningLevel={!warningLevel}"
+    printfn $"Arguments parsed were\n\tinputName={!inputName}\n\tverbose={!verbose}\n\twarningLevel={!warningLevel}"
+    
+    // Parsing While language using Lex + Yacc
+    printfn $"Parsed While program:\n{parseWhile !inputName}"
+    
+    
+    // Some Json
     let p = { X = 11; Y = 22 }
     let pJSON = JsonSerializer.Serialize p
     printfn "pJSON = %s" pJSON
     let p' : Point = JsonSerializer.Deserialize pJSON
     printfn "p' =\n%A" p'
+
+    // Path finding on the board
     Pathfinding.markShortestPath ()
     Pathfinding.printBoard ()
+
     Say.libHello "console program"
     0 // return an integer exit code

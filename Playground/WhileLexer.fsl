@@ -1,0 +1,59 @@
+{
+open FSharp.Text.Lexing
+open WhileParser
+open System
+
+type pos = string
+let getPos (lexbuf :LexBuffer<char>) : string =
+    let start, ending = lexbuf.StartPos, lexbuf.EndPos
+    sprintf "line %i, col %i until line %i, col %i" (start.Line+1) start.Column (ending.Line+1) ending.Column
+
+let lexeme (lexbuf :LexBuffer<char>) = LexBuffer<char>.LexemeString lexbuf
+let newline (lexbuf:LexBuffer<_>) = lexbuf.EndPos <- lexbuf.EndPos.NextLine
+}
+
+let digit = ['0'-'9']
+let letter = ['a'-'z' 'A'-'Z']
+let whitespace = [' ' '\t' ]
+let newline = ('\n' | '\r' '\n')
+
+rule token = parse
+  | whitespace        { token lexbuf }
+  | newline           { newline lexbuf;  token lexbuf }
+  | "while"           { WHILE }
+  | "begin"           { BEGIN }
+  | "end"             { END }
+  | "do"              { DO }
+  | "od"              { OD }
+  | "if"              { IF }
+  | "then"            { THEN }
+  | "else"            { ELSE }
+  | "fi"              { FI }
+  | "("               { LPAREN }
+  | ")"               { RPAREN }
+  | ";"               { SEMI }
+  | ":="              { ASSIGN }
+  | "var"             { VAR }
+  | "read"            { READ }
+  | "write"           { WRITE }
+  | letter(letter|digit)*        { ID(lexeme lexbuf) }
+  | digit+            { INT (Int32.Parse(lexeme lexbuf)) }
+  | "//" [^ '\n']* '\n' { newline lexbuf; token lexbuf }
+  | "/*" { comment lexbuf }
+  | "+" { PLUS }
+  | "-" { MINUS }
+  | "/" { DIVIDE }
+  | "*" { MULTIPLY }
+  | "!=" { NOTEQUALS }
+  | "=" { EQUALS }
+  | "<=" { LTEQ }
+  | ">=" { GTEQ }
+  | "<" { LT }
+  | ">" { GT }
+  | eof   { EOF }
+
+and comment = parse
+  | [^'*''\n']* { comment lexbuf }
+  | newline { newline lexbuf; comment lexbuf }
+  | "*"[^'/'] { comment lexbuf }
+  | "*/" { token lexbuf }
