@@ -2,6 +2,8 @@ module GUI
 
 open System
 
+let problemGlobalVar: Model.Problem option ref = ref None
+
 module Counter =
     open Avalonia.Controls
     open Avalonia.FuncUI.DSL
@@ -42,16 +44,29 @@ module Counter =
                 Canvas.create [
                     Canvas.background "#2c3e50"
                     Canvas.children (
-                        let vs = state.Problem.Figure.Vertices
-                        state.Problem.Figure.Edges
-                        |> Array.toList
-                        |> List.map (fun (s,t) ->
-                            Line.create [
-                                Line.startPoint (float vs.[s].X, float vs.[s].Y)
-                                Line.endPoint (float vs.[t].X, float vs.[t].Y)
-                                Line.strokeThickness 2.0
-                                Line.stroke "#e74c3c"
-                            ] :> Avalonia.FuncUI.Types.IView
+                        (
+                            let vs = state.Problem.Figure.Vertices
+                            state.Problem.Figure.Edges
+                            |> Array.toList
+                            |> List.map (fun (s,t) ->
+                                Line.create [
+                                    Line.startPoint (float vs.[s].X, float vs.[s].Y)
+                                    Line.endPoint (float vs.[t].X, float vs.[t].Y)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#e74c3c"
+                                ] :> Avalonia.FuncUI.Types.IView
+                            )
+                        ) @
+                        (
+                            Model.holeSegments state.Problem
+                            |> List.map (fun (s,t) ->
+                                Line.create [
+                                    Line.startPoint (float s.X, float s.Y)
+                                    Line.endPoint (float t.X, float t.Y)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#000000"
+                                ] :> Avalonia.FuncUI.Types.IView
+                            )
                         )
                     )
                 ]       
@@ -76,9 +91,7 @@ type MainWindow() as this =
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
 
-        // TODO: Terrible hack, but I don't know how toget the args here
-        let argv = System.Environment.GetCommandLineArgs()
-        let problem = Model.parseFile argv.[2]
+        let problem = Option.get !problemGlobalVar
 
         Elmish.Program.mkSimple Counter.init Counter.update Counter.view
         |> Program.withHost this
@@ -97,9 +110,10 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui args =
+let showGui problem =
+        problemGlobalVar := Some problem 
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
             .UseSkia()
-            .StartWithClassicDesktopLifetime(args)
+            .StartWithClassicDesktopLifetime([||]) // TODO: how to parse args

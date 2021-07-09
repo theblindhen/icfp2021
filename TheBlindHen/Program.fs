@@ -30,10 +30,7 @@ let main args =
     match !inputFile with
     | None ->
         printfn "No input file given"
-        if !gui then
-            GUI.showGui [||] (* TODO: arg passing *)
-        else
-            0
+        1
     | Some inputFile ->
         let problem = Model.parseFile inputFile
         printfn "%A" problem
@@ -41,5 +38,6 @@ let main args =
         let figure = solveProblem problem
         printfn "%s" (Model.deparseSolution (solutionOfFigure figure))
         if !gui then
-            failwith "Not implemented: Gui and problems!"
-        0
+            GUI.showGui problem
+        else
+            0
