@@ -20,8 +20,9 @@ let hillClimber neighbors cost =
 
 
 // optimize the given solution using hill-climbing with the given
-// neighbor and cost function; stops after the given number of max
-// iterations or the first solution with a non-positive cost
+// neighbor and cost function; stops after the given number of iterations
+// or a solution is encountered with a non-positive cost, whichever comes first
+//
 // maximum number of iterations must be positive
 let runHillClimber neighbors cost maxIterations solution =
     Seq.append (Seq.singleton solution) (hillClimber neighbors cost solution)
