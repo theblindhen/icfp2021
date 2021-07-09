@@ -35,6 +35,6 @@ type TestClass () =
                 { SolutionVertices  = Array.ofList [Coord(10,10); Coord(10, 20); Coord(20, 19); Coord(20, 10)] };
             ]
         Assert.AreEqual(expectedSolutions,
-            Neighbors.translateRandomVertex (Random 0) ({
+            Neighbors.translateRandomCoord (Random 0) ({
                 SolutionVertices = Array.ofList [Coord(10,10); Coord(10, 20); Coord(20, 20); Coord(20, 10)]
             }))
