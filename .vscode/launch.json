@@ -26,6 +26,16 @@
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
+        },
+        {
+            "name": "Run unittests",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "dotnet",
+            "args": ["test"],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
         }
     ]
 }
