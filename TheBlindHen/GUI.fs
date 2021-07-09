@@ -12,8 +12,9 @@ let stepSolver (problem: Model.Problem) =
     let neighbors = Neighbors.translateRandomCoord rnd
     Hillclimber.step neighbors (figurePenalty problem)
 
-module Counter =
+module MVU =
     open Avalonia.Controls
+    open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
     open Avalonia.Layout
     open Avalonia.Controls.Shapes
@@ -21,6 +22,7 @@ module Counter =
     type State = {
         Problem: Model.Problem
         CurrentFigure: Model.Figure
+        Scale: float
     }
 
     let init (problem: Model.Problem) =
@@ -30,19 +32,22 @@ module Counter =
         {
             Problem = problem
             CurrentFigure = mangledFigure
+            Scale = 2.0
         }
 
-    type Msg = Increment | Decrement | Reset
+    type Msg = Forward | Backward | Reset | ZoomIn | ZoomOut
 
     let update (msg: Msg) (state: State) : State =
         match msg with
         // TODO: pre-compute a stepper
-        | Increment -> { state with CurrentFigure = stepSolver state.Problem state.CurrentFigure }
-        | Decrement -> state
+        | Forward -> { state with CurrentFigure = stepSolver state.Problem state.CurrentFigure }
+        | Backward -> state
         | Reset -> state
+        | ZoomIn -> { state with Scale = state.Scale * 1.50 }
+        | ZoomOut -> { state with Scale = state.Scale / 1.50 }
     
     let view (state: State) (dispatch) =
-        let scale = 2.0
+        let scale = state.Scale
         DockPanel.create [
             DockPanel.children [
                 Button.create [
@@ -50,15 +55,27 @@ module Counter =
                     Button.onClick (fun _ -> dispatch Reset)
                     Button.content "reset"
                 ]                
-                Button.create [
-                    Button.dock Dock.Bottom
-                    Button.onClick (fun _ -> dispatch Decrement)
-                    Button.content "-"
-                ]
-                Button.create [
-                    Button.dock Dock.Bottom
-                    Button.onClick (fun _ -> dispatch Increment)
-                    Button.content "+"
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch Backward)
+                            Button.content "<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch Forward)
+                            Button.content ">"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch ZoomOut)
+                            Button.content "-"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch ZoomIn)
+                            Button.content "+"
+                        ]
+                    ]
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
@@ -112,7 +129,7 @@ type MainWindow() as this =
 
         let problem = Option.get !problemGlobalVar
 
-        Elmish.Program.mkSimple Counter.init Counter.update Counter.view
+        Elmish.Program.mkSimple MVU.init MVU.update MVU.view
         |> Program.withHost this
         |> Program.runWith problem
 
