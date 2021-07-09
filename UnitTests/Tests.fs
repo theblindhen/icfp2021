@@ -1,6 +1,7 @@
 namespace UnitTests
 
 open System
+open Model
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
 [<TestClass>]
@@ -22,3 +23,18 @@ type TestClass () =
         Assert.AreEqual(0.5, Hillclimber.runHillClimber (fun d -> [d - 0.5; d + 0.5]) id 4 2.5)
         Assert.AreEqual(0.0, Hillclimber.runHillClimber (fun d -> [d - 0.5; d + 0.5]) id 5 2.5)
         Assert.AreEqual(0.0, Hillclimber.runHillClimber (fun d -> [d - 0.5; d + 0.5]) id 10 2.5)
+
+    [<TestMethod>]
+    member this.TestTranslateRandomCoord () =
+        Assert.AreEqual(2, (Random 0).Next(4))
+        let expectedSolutions =
+            [
+                { SolutionVertices  = Array.ofList [Coord(10,10); Coord(10, 20); Coord(21, 20); Coord(20, 10)] };
+                { SolutionVertices  = Array.ofList [Coord(10,10); Coord(10, 20); Coord(20, 21); Coord(20, 10)] };
+                { SolutionVertices  = Array.ofList [Coord(10,10); Coord(10, 20); Coord(19, 20); Coord(20, 10)] };
+                { SolutionVertices  = Array.ofList [Coord(10,10); Coord(10, 20); Coord(20, 19); Coord(20, 10)] };
+            ]
+        Assert.AreEqual(expectedSolutions,
+            Neighbors.translateRandomVertex (Random 0) ({
+                SolutionVertices = Array.ofList [Coord(10,10); Coord(10, 20); Coord(20, 20); Coord(20, 10)]
+            }))

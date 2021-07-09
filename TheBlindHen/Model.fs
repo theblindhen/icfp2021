@@ -59,6 +59,11 @@ type Solution = {
     SolutionVertices: Coord array
 }
 
+let copySolution (s: Solution): Solution =
+    {
+        SolutionVertices = Array.copy s.SolutionVertices
+    }
+
 let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
         Edges = raw.edges |> Array.map (fun [|x; y|] -> (x, y))
