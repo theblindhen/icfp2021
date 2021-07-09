@@ -51,8 +51,23 @@ let sortSegments (segments : Segment list) =
 // let innerCoordsOfSimplePolygon  segments =
 //     let edges
 
-let segmentsIntersect (seg1 : Segment) (seg2: Segment) : bool =
-    false
+// let solveTwoByTwo (row1: Coord, row2: Coord) (target: Coord) =
+//     let D = row1.X * row2.Y - row1.Y * row2.X
+//     if D === 0 then
+//         None
+//     else
+//         let inv1 = 
+
+type SegmentOverlap =
+    | StartFirst of float
+    | StartSecond of float
+type SegmentIntersection =
+    | Parallel
+    | Overlap of SegmentOverlap
+    | Point of float * float    // Multiplier of first and second segment vector for point
+
+let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
+    Parallel
 
 
 
