@@ -80,3 +80,8 @@ let parseFile (file: string) : Problem =
 
 let deparseSolution (sol: Solution) : string =
     """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""
+
+let figureEdges (fig: Figure) =
+    fig.Edges
+    |> Array.toList
+    |> List.map (fun (v1, v2) -> (fig.Vertices.[v1], fig.Vertices.[v2]))
