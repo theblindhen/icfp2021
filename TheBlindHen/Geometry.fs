@@ -51,6 +51,8 @@ let sortSegments (segments : Segment list) =
 // let innerCoordsOfSimplePolygon  segments =
 //     let edges
 
+let segmentsIntersect (seg1 : Segment) (seg2: Segment) : bool =
+    false
 
 
 
