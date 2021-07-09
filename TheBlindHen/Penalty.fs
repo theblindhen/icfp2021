@@ -7,9 +7,9 @@ type PenaltyFn = Problem -> Figure -> float
 
 /// Return the allowed ranges for each edge in the problem
 let problemEdgeLengthSqRanges (problem: Problem) =
-    figureEdges problem.Figure
-    |> List.map (fun edge ->
-           let len = edgeLengthSq edge
+    figureSegments problem.Figure
+    |> List.map (fun segment ->
+           let len = segmentLengthSq segment
            ((float len) * (1. - (float problem.Epsilon)/1000000.),
             (float len) * (1. + (float problem.Epsilon)/1000000.)))
     |> Array.ofList
@@ -19,8 +19,8 @@ let problemEdgeLengthSqRanges (problem: Problem) =
 let penaltyEdgeLengthSqSum (problem: Problem) =
     let edgeSqRanges = problemEdgeLengthSqRanges problem
     fun (fig: Figure) ->
-        figureEdges fig
-        |> List.map (edgeLengthSq >> float)
+        figureSegments fig
+        |> List.map (segmentLengthSq >> float)
         |> List.mapi (fun i lensq ->
             let (min, max) = edgeSqRanges.[i]
             if lensq >= min && lensq <= max then
@@ -34,12 +34,12 @@ let penaltyEdgeLengthSqSum (problem: Problem) =
 
 /// Return the sum of each edge's ratio to the allowed range
 let penaltyEdgeRatioSum (problem: Problem) =
-    let edgeSqRanges = problemEdgeLengthSqRanges problem
+    let segmentSqRanges = problemEdgeLengthSqRanges problem
     fun (fig: Figure) ->
-        figureEdges fig
-        |> List.map (edgeLengthSq >> float)
+        figureSegments fig
+        |> List.map (segmentLengthSq >> float)
         |> List.mapi (fun i lensq ->
-            let (min, max) = edgeSqRanges.[i]
+            let (min, max) = segmentSqRanges.[i]
             if lensq >= min && lensq <= max then
                 0.0
             else

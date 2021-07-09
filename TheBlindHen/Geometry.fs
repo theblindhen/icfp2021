@@ -4,7 +4,8 @@ open Model
 
 exception Exception of string
 
-type Edge = Coord * Coord
+/// Line segment
+type Segment = Coord * Coord
 
 /// Invariant that vertices V1-3 are sorted in increasing order of their Y-coordinate
 /// constructor will sort input
@@ -46,6 +47,6 @@ type Edge = Coord * Coord
 
 
 
-let edgeLengthSq ((p1, p2): Edge) =
+let segmentLengthSq ((p1, p2): Segment) =
     let dx, dy = p1.X - p2.X, p1.Y - p2.Y
     dx*dx + dy*dy

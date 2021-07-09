@@ -98,7 +98,7 @@ let parseFile (file: string) : Problem =
 let deparseSolution (sol: Solution) : string =
     """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""
     
-let holeEdges (problem: Problem) =
+let holeSegments (problem: Problem) =
     let edges, _ =
         problem.Hole
         |> Array.fold (fun (edges, olast) cur ->
@@ -107,7 +107,7 @@ let holeEdges (problem: Problem) =
             | Some last -> ((last, cur)::edges, Some cur)) ([], None)
     edges
 
-let figureEdges (fig: Figure) =
+let figureSegments (fig: Figure) =
     fig.Edges
     |> Array.toList
     |> List.map (fun (v1, v2) -> (fig.Vertices.[v1], fig.Vertices.[v2]))
