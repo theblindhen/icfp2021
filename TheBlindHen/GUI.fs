@@ -8,16 +8,18 @@ module Counter =
     open Avalonia.Layout
     open Avalonia.Controls.Shapes
 
-    type State = { Count : int }
-    let init = { Count = 0 }
+    type State = {
+        Problem: Model.Problem
+    }
+    let init problem = { Problem = problem }
 
     type Msg = Increment | Decrement | Reset
 
     let update (msg: Msg) (state: State) : State =
         match msg with
-        | Increment -> { state with Count = state.Count + 1 }
-        | Decrement -> { state with Count = state.Count - 1 }
-        | Reset -> init
+        | Increment -> state
+        | Decrement -> state
+        | Reset -> state
     
     let view (state: State) (dispatch) =
         DockPanel.create [
@@ -39,14 +41,19 @@ module Counter =
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
-                    Canvas.children [
-                        Line.create [
-                            Line.startPoint (100.0 + float state.Count, 100.0)
-                            Line.endPoint (0.0, 0.0)
-                            Line.strokeThickness 2.0
-                            Line.stroke "#e74c3c"
-                        ]
-                    ]
+                    Canvas.children (
+                        let vs = state.Problem.Figure.Vertices
+                        state.Problem.Figure.Edges
+                        |> Array.toList
+                        |> List.map (fun (s,t) ->
+                            Line.create [
+                                Line.startPoint (float vs.[s].X, float vs.[s].Y)
+                                Line.endPoint (float vs.[t].X, float vs.[t].Y)
+                                Line.strokeThickness 2.0
+                                Line.stroke "#e74c3c"
+                            ] :> Avalonia.FuncUI.Types.IView
+                        )
+                    )
                 ]       
             ]
         ]       
@@ -69,12 +76,14 @@ type MainWindow() as this =
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
 
+        // TODO: Terrible hack, but I don't know how toget the args here
+        let argv = System.Environment.GetCommandLineArgs()
+        let problem = Model.parseFile argv.[2]
 
-        Elmish.Program.mkSimple (fun () -> Counter.init) Counter.update Counter.view
+        Elmish.Program.mkSimple Counter.init Counter.update Counter.view
         |> Program.withHost this
-        |> Program.run
+        |> Program.runWith problem
 
-        
 type App() =
     inherit Application()
 
@@ -88,9 +97,9 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui () =
+let showGui args =
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
             .UseSkia()
-            .StartWithClassicDesktopLifetime([| |])
+            .StartWithClassicDesktopLifetime(args)
