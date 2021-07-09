@@ -28,34 +28,46 @@ module Raw =
 // solutions but specific enough that they don't admit obviously ill-formed
 // data.
 
-type Coordinate = int * int
+type Coord = 
+    struct 
+        val X: int
+        val Y: int
+        new(x: int, y: int) = { X = x; Y = y }
+
+        // member this.GetDistanceFrom(p: Coordinate) = 
+        //     let dX = pown (p.X - this.X) 2
+        //     let dY = pown (p.Y - this.Y) 2
+            
+        //     dX + dY
+        //     |> sqrt
+    end
 
 type VertexId = int
 
 type Figure = {
     Edges: (VertexId * VertexId) array
-    Vertices: Coordinate array
+    Vertices: Coord array
 }
 
 type Problem = {
-    Hole: Coordinate array
+    Hole: Coord array
     Figure: Figure
     Epsilon: int
 }
 
 type Solution = {
-    SolutionVertices: Coordinate array
+    SolutionVertices: Coord array
 }
 
 let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
         Edges = raw.edges |> Array.map (fun [|x; y|] -> (x, y))
-        Vertices = raw.vertices |> Array.map (fun [|x; y|] -> (x, y))
+        Vertices = raw.vertices |> Array.map (fun [|x; y|] -> Coord(x, y))
     }
 
 let private fromRawProblem (raw: Raw.Problem) : Problem =
     {
-        Hole = raw.hole |> Array.map (fun [|x; y|] -> (x, y))
+        Hole = raw.hole |> Array.map (fun [|x; y|] -> Coord(x, y))
         Figure = raw.figure |> fromRawFigure
         Epsilon = raw.epsilon
     }
@@ -67,4 +79,4 @@ let parseFile (file: string) : Problem =
     fromRawProblem (Raw.parseFile file)
 
 let deparseSolution (sol: Solution) : string =
-    """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun (x,y) -> $"[{x},{y}]")) + """]}"""
+    """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""
