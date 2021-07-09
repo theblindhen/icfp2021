@@ -16,6 +16,8 @@ let main args =
         let mockSolution = { Model.SolutionVertices = problem.Figure.Vertices }
         printfn "%s" (Model.deparseSolution mockSolution)
         0 // return an integer exit code
+    | [| "gui" |] ->
+        GUI.showGui ()
     | _ ->
         printfn "Usage: see source code!"
         1
