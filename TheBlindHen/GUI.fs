@@ -37,19 +37,19 @@ module MVU =
             Scale = 2.0
         }
 
-    type Msg = Forward | Backward | Reset | ZoomIn | ZoomOut
+    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut
 
     let update (msg: Msg) (state: State) : State =
         match msg with
-        | Forward ->
-            let newIndex = state.Index + 1
-            if newIndex >= state.History.Count then
+        | Forward steps ->
+            let newIndex = state.Index + steps
+            while newIndex >= state.History.Count do
                 let lastState = state.History.[state.History.Count - 1]
                 // TODO: pre-compute a stepper
                 state.History.Add (stepSolver state.Problem lastState)
             { state with Index = newIndex }
-        | Backward -> { state with Index = max 0 (state.Index - 1) }
-        | Reset -> state
+        | Backward steps -> { state with Index = max 0 (state.Index - steps) }
+        | Reset -> { state with Index = 0 }
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }
     
@@ -67,12 +67,28 @@ module MVU =
                     UniformGrid.columns 2
                     UniformGrid.children [
                         Button.create [
-                            Button.onClick (fun _ -> dispatch Backward)
+                            Button.onClick (fun _ -> dispatch (Backward 1))
                             Button.content "<"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch Forward)
+                            Button.onClick (fun _ -> dispatch (Forward 1))
                             Button.content ">"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 10))
+                            Button.content "<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Forward 10))
+                            Button.content ">>"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 109))
+                            Button.content "<<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Forward 100))
+                            Button.content ">>>"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomOut)
