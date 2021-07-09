@@ -24,14 +24,14 @@ let hillClimber neighbors cost =
 /// or a state is encountered with a non-positive cost, whichever comes first
 ///
 /// Maximum number of iterations must be positive
-let runHillClimber neighbors cost maxIterations state listener =
+let runHillClimber neighbors cost maxIterations state =
     Seq.append (Seq.singleton state) (hillClimber neighbors cost state)
     |> Seq.pairwise
     |> Seq.take maxIterations
     |> Seq.takeWhile (fun (prevSol, _) -> cost prevSol > 0.0)
-    |> Seq.map (fun (prevSol, state) ->
-                    listener prevSol;
-                    (prevSol, state))
+    // |> Seq.map (fun (prevSol, state) ->
+    //                 listener prevSol;
+    //                 (prevSol, state))
     |> Seq.tryLast
     |> Option.map snd
     |> Option.defaultValue state
