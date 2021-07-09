@@ -29,5 +29,6 @@ let runHillClimber neighbors cost maxIterations solution =
     |> Seq.pairwise
     |> Seq.take maxIterations
     |> Seq.takeWhile (fun (prevSol, _) -> cost prevSol > 0.0)
-    |> Seq.last
-    |> snd
+    |> Seq.tryLast
+    |> Option.map snd
+    |> Option.defaultValue solution
