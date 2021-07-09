@@ -5,6 +5,7 @@ open Geometry
 
 type PenaltyFn = Problem -> Figure -> float
 
+/// Return the allowed ranges for each edge in the problem
 let problemEdgeLengthSqRanges (problem: Problem) =
     figureEdges problem.Figure
     |> List.map (fun edge ->
@@ -14,7 +15,7 @@ let problemEdgeLengthSqRanges (problem: Problem) =
     |> Array.ofList
 
 
-// Return the sum of how much each edge's sq-length is outside the allowed range
+/// Return the sum of how much each edge's sq-length is outside the allowed range
 let penaltyEdgeLengthSqSum (problem: Problem) =
     let edgeSqRanges = problemEdgeLengthSqRanges problem
     fun (fig: Figure) ->
@@ -31,7 +32,7 @@ let penaltyEdgeLengthSqSum (problem: Problem) =
                     lensq - max)
         |> List.sum
 
-// Return the sum of each edge's ratio to the allowed range
+/// Return the sum of each edge's ratio to the allowed range
 let penaltyEdgeRatioSum (problem: Problem) =
     let edgeSqRanges = problemEdgeLengthSqRanges problem
     fun (fig: Figure) ->
@@ -47,3 +48,15 @@ let penaltyEdgeRatioSum (problem: Problem) =
                 else
                     lensq / max)
         |> List.sum
+
+// /// Return the number of edge crossing between the figure and the problem hole 
+// /// TODO: Implement memoization for efficiency
+// let penaltyEdgeCrossings (problem: Problem) =
+//     let holeEdges = holeEdges problem
+//     fun (fig: Figure) ->
+//         figureEdges fig
+//         |> List.sumBy (fun edge ->
+//             if List.exists (fun e -> edgesIntersects e edge) holeEdges then
+//                 1.0
+//             else
+//                 0.0)
