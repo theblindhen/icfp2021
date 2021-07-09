@@ -8,10 +8,14 @@ let from whom =
 
 [<EntryPoint>]
 let main args =
-    let inputFile = args.[0]
-    let problem = Model.parseFile inputFile
-    printfn "%A" problem
-    printfn "The same problem, pretending to be a solution"
-    let mockSolution = { Model.SolutionVertices = problem.Figure.Vertices }
-    printfn "%s" (Model.deparseSolution mockSolution)
-    0 // return an integer exit code
+    match args with
+    | [| "parse"; inputFile |] ->
+        let problem = Model.parseFile inputFile
+        printfn "%A" problem
+        printfn "The same problem, pretending to be a solution"
+        let mockSolution = { Model.SolutionVertices = problem.Figure.Vertices }
+        printfn "%s" (Model.deparseSolution mockSolution)
+        0 // return an integer exit code
+    | _ ->
+        printfn "Usage: see source code!"
+        1
