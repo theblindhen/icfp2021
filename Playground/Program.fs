@@ -37,7 +37,7 @@ let from whom =
     $"from {whom}" // requires F# 5.0!
 
 // Play with command line arguments
-let inputName = ref "Playground/test.while"
+let inputName = ref "test.while"
 let verbose = ref false
 let warningLevel = ref 0
 let compile s = printfn "Compiling %s..." s
