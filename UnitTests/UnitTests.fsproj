@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Compile Include="Tests.fs" />
-    <Compile Include="Pathfinding.Test.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -21,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Playground\Playground.fsproj" />
+    <ProjectReference Include="..\TheBlindHen\TheBlindHen.fsproj" />
   </ItemGroup>
 
 </Project>

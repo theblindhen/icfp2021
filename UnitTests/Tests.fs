@@ -9,3 +9,7 @@ type TestClass () =
     [<TestMethod>]
     member this.TestMethodPassing () =
         Assert.IsTrue(true);
+
+    [<TestMethod>]
+    member this.TestFrom () =
+        Assert.AreEqual("from monkey", Program.from "monkey")
