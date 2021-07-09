@@ -12,6 +12,9 @@ type Vector =
         val X: float
         val Y: float
         new(x: float, y: float) = { X = x; Y = y }
+
+        member this.Length = 
+            sqrt(this.X*this.X + this.Y*this.Y)
     end
 
 /// Invariant that vertices V1-3 are sorted in increasing order of their Y-coordinate
@@ -58,18 +61,30 @@ let sortSegments (segments : Segment list) =
 // let innerCoordsOfSimplePolygon  segments =
 //     let edges
 
+let EPSILON = 0.001
+
 let vectorOfSegment ((s1, s2): Segment) =
     Vector (float (s1.X - s2.X), float (s1.Y - s2.Y)) 
 
-let EPSILON = 0.001
-let solveTwoByTwo (row1: Vector, row2: Vector) (target: Vector) =
+let vectorDotProduct (v1: Vector) (v2: Vector) =
+    v1.X * v2.X + v1.Y * v2.Y
+
+let vectorsAreParallel (v1: Vector) (v2: Vector) =
+    let v2hat = Vector(-v2.Y, v2.X)
+    vectorDotProduct v1 v2hat < EPSILON
+
+/// Solve a 2x2 matrix problem by inversion.
+/// Returns None if the matrix is singular.
+/// Note that there may still be a solution, if the column space is
+/// 1-dimensional and the target vector happens to fall within that.
+let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
     let d = row1.X * row2.Y - row1.Y * row2.X
     if d < EPSILON then
         None
     else
         let sX = target.X * row2.Y - target.Y * row1.Y
         let sY = target.X * row2.X - target.Y * row1.X
-        Some (Vector (sX/d, sY/d))
+        Some (Vector (sX/d, -sY/d))
 
 type SegmentIntersection =
     | Parallel
@@ -79,15 +94,18 @@ type SegmentIntersection =
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
     let v1 = vectorOfSegment seg1
     let v2 = vectorOfSegment seg2
-    let p1,_ = seg1
-    let p2,_ = seg2
-    let target = Vector(float (p1.X - p2.X), float (p1.Y - p2.Y))
-    match solveTwoByTwo (v1, v2) target with
-    | None -> Parallel
-    | Some v ->
-        Parallel
-    
-
-
-
-
+    let p1,q1 = seg1
+    let p2,q2 = seg2
+    let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
+    match solveByInversion (v1, v2) startDiff with
+    | Some sol -> Point (sol.X, sol.Y)
+    | None ->
+        // The segments are parallel.
+        // They are then on the same line exactly when startDiff is parallel to v1
+        if vectorsAreParallel startDiff v1 then
+            let len1 = v1.Length
+            let endDiff = Vector(float (q2.X - q1.X), float (q2.Y - q1.Y))
+            Overlap (startDiff.Length / len1, endDiff.Length / len1)
+        else
+            Parallel
+        
