@@ -87,9 +87,12 @@ let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
         Some (Vector (sX/d, -sY/d))
 
 type SegmentIntersection =
+      /// Segments are parallel but not on the same line
     | Parallel
-    | Overlap of (float * float)  // Multipliers on segment 1 which defines the overlap
-    | Point of float * float    // Multiplier of first and second segment vector for point
+      /// Segments lie on the same line. Multipliers on segment 1 which defines the overlap
+    | Overlap of (float * float)  
+      /// Multiplier of first and second segment vector for point
+    | Point of float * float    
 
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
     let v1 = vectorOfSegment seg1
