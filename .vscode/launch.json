@@ -6,33 +6,22 @@
     "configurations": [
 
         {
-            "name": "Launch Playground (Debug)",
+            "name": "Launch TheBlindHen (Debug)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build_debug",
-            "program": "${workspaceFolder}/Playground/bin/Debug/net5.0/Playground.dll",
+            "program": "${workspaceFolder}/TheBlindHen/bin/Debug/net5.0/TheBlindHen.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
         },
         {
-            "name": "Launch Playground (Release)",
+            "name": "Launch TheBlindHen (Release)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build_release",
-            "program": "${workspaceFolder}/Playground/bin/Release/net5.0/Playground.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}",
-            "stopAtEntry": false,
-            "console": "internalConsole"
-        },
-        {
-            "name": "Launch HelloWorld (Debug)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build_debug",
-            "program": "${workspaceFolder}/HelloWorld/bin/Debug/net5.0/HelloWorld.dll",
+            "program": "${workspaceFolder}/TheBlindHen/bin/Release/net5.0/TheBlindHen.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
