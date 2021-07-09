@@ -7,6 +7,13 @@ exception Exception of string
 /// Line segment
 type Segment = Coord * Coord
 
+type Vector = 
+    struct 
+        val X: float
+        val Y: float
+        new(x: float, y: float) = { X = x; Y = y }
+    end
+
 /// Invariant that vertices V1-3 are sorted in increasing order of their Y-coordinate
 /// constructor will sort input
 // type Triangle = 
@@ -51,23 +58,35 @@ let sortSegments (segments : Segment list) =
 // let innerCoordsOfSimplePolygon  segments =
 //     let edges
 
-// let solveTwoByTwo (row1: Coord, row2: Coord) (target: Coord) =
-//     let D = row1.X * row2.Y - row1.Y * row2.X
-//     if D === 0 then
-//         None
-//     else
-//         let inv1 = 
+let vectorOfSegment ((s1, s2): Segment) =
+    Vector (float (s1.X - s2.X), float (s1.Y - s2.Y)) 
 
-type SegmentOverlap =
-    | StartFirst of float
-    | StartSecond of float
+let EPSILON = 0.001
+let solveTwoByTwo (row1: Vector, row2: Vector) (target: Vector) =
+    let d = row1.X * row2.Y - row1.Y * row2.X
+    if d < EPSILON then
+        None
+    else
+        let sX = target.X * row2.Y - target.Y * row1.Y
+        let sY = target.X * row2.X - target.Y * row1.X
+        Some (Vector (sX/d, sY/d))
+
 type SegmentIntersection =
     | Parallel
-    | Overlap of SegmentOverlap
+    | Overlap of (float * float)  // Multipliers on segment 1 which defines the overlap
     | Point of float * float    // Multiplier of first and second segment vector for point
 
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
-    Parallel
+    let v1 = vectorOfSegment seg1
+    let v2 = vectorOfSegment seg2
+    let p1,_ = seg1
+    let p2,_ = seg2
+    let target = Vector(float (p1.X - p2.X), float (p1.Y - p2.Y))
+    match solveTwoByTwo (v1, v2) target with
+    | None -> Parallel
+    | Some v ->
+        Parallel
+    
 
 
 
