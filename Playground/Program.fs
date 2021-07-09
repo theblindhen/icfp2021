@@ -76,5 +76,5 @@ let main argv =
     Pathfinding.markShortestPathAStar ()
     Pathfinding.printBoard ()
 
-    Say.libHello "console program"
+    Say.libHello "console program monkey"
     0 // return an integer exit code
