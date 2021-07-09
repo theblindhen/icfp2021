@@ -58,10 +58,12 @@ let sortSegments (segments : Segment list) =
 //     else
 //         let inv1 = 
 
-
+type SegmentOverlap =
+    | StartFirst of float
+    | StartSecond of float
 type SegmentIntersection =
     | Parallel
-    | Overlap of float * float  // Start and end multiplier of overlap to first segment's 
+    | Overlap of SegmentOverlap
     | Point of float * float    // Multiplier of first and second segment vector for point
 
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
