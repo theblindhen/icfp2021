@@ -2,7 +2,13 @@ module GUI
 
 open System
 
+// We haven't found a good way to pass arguments through App, so we use a global
+// var here.
 let problemGlobalVar: Model.Problem option ref = ref None
+
+// The stepper can't be part of the state since the state has to be equatable in
+// Avalonia FuncUI.
+let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
 let figurePenalty (problem: Model.Problem) =
     Penalty.penaltyEdgeLengthSqSum problem
@@ -21,28 +27,35 @@ module MVU =
 
     type State = {
         Problem: Model.Problem
-        CurrentFigure: Model.Figure
+        History: ResizeArray<Model.Figure>
+        Index: int // position in History
         Scale: float
     }
 
     let init (problem: Model.Problem) =
         let mangledFigure = Model.copyFigure problem.Figure
-        //mangledFigure.Vertices.[1] <- Model.Coord(12, 15)
-        //mangledFigure.Vertices.[2] <- Model.Coord(25, 20)
+        //mangledFigure.Vertices.[1] <- Model.Coord(12, 15) // TODO: remove this test code!
+        //mangledFigure.Vertices.[2] <- Model.Coord(25, 20) // TODO: remove this test code!
         {
             Problem = problem
-            CurrentFigure = mangledFigure
+            History = ResizeArray([mangledFigure])
+            Index = 0
             Scale = 2.0
         }
 
-    type Msg = Forward | Backward | Reset | ZoomIn | ZoomOut
+    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut
 
     let update (msg: Msg) (state: State) : State =
         match msg with
-        // TODO: pre-compute a stepper
-        | Forward -> { state with CurrentFigure = stepSolver state.Problem state.CurrentFigure }
-        | Backward -> state
-        | Reset -> state
+        | Forward steps ->
+            let newIndex = state.Index + steps
+            let stepper = Option.get !stepperGlobalVar
+            while newIndex >= state.History.Count do
+                let lastState = state.History.[state.History.Count - 1]
+                state.History.Add (stepper lastState)
+            { state with Index = newIndex }
+        | Backward steps -> { state with Index = max 0 (state.Index - steps) }
+        | Reset -> { state with Index = 0 }
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }
     
@@ -60,12 +73,28 @@ module MVU =
                     UniformGrid.columns 2
                     UniformGrid.children [
                         Button.create [
-                            Button.onClick (fun _ -> dispatch Backward)
+                            Button.onClick (fun _ -> dispatch (Backward 1))
                             Button.content "<"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch Forward)
+                            Button.onClick (fun _ -> dispatch (Forward 1))
                             Button.content ">"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 10))
+                            Button.content "<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Forward 10))
+                            Button.content ">>"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 109))
+                            Button.content "<<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Forward 100))
+                            Button.content ">>>"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomOut)
@@ -81,8 +110,9 @@ module MVU =
                     Canvas.background "#2c3e50"
                     Canvas.children (
                         (
-                            let vs = state.CurrentFigure.Vertices
-                            state.CurrentFigure.Edges
+                            let figure = state.History.[state.Index]
+                            let vs = figure.Vertices
+                            figure.Edges
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 Line.create [
@@ -148,6 +178,7 @@ type App() =
 
 let showGui problem =
         problemGlobalVar := Some problem 
+        stepperGlobalVar := Some (stepSolver problem)
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
