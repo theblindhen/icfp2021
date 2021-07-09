@@ -4,6 +4,14 @@ open System
 
 let problemGlobalVar: Model.Problem option ref = ref None
 
+let figurePenalty (problem: Model.Problem) =
+    Penalty.penaltyEdgeLengthSqSum problem
+
+let stepSolver (problem: Model.Problem) =
+    let rnd = System.Random (int System.DateTime.Now.Ticks)
+    let neighbors = Neighbors.translateRandomCoord rnd
+    Hillclimber.step neighbors (figurePenalty problem)
+
 module Counter =
     open Avalonia.Controls
     open Avalonia.FuncUI.DSL
@@ -12,14 +20,20 @@ module Counter =
 
     type State = {
         Problem: Model.Problem
+        CurrentFigure: Model.Figure
     }
-    let init problem = { Problem = problem }
+
+    let init problem = {
+        Problem = problem
+        CurrentFigure = problem.Figure
+    }
 
     type Msg = Increment | Decrement | Reset
 
     let update (msg: Msg) (state: State) : State =
         match msg with
-        | Increment -> state
+        // TODO: pre-compute a stepper
+        | Increment -> { state with CurrentFigure = stepSolver state.Problem state.CurrentFigure }
         | Decrement -> state
         | Reset -> state
     
@@ -45,8 +59,8 @@ module Counter =
                     Canvas.background "#2c3e50"
                     Canvas.children (
                         (
-                            let vs = state.Problem.Figure.Vertices
-                            state.Problem.Figure.Edges
+                            let vs = state.CurrentFigure.Vertices
+                            state.CurrentFigure.Edges
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 Line.create [

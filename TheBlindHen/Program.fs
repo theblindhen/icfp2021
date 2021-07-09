@@ -7,16 +7,6 @@ open ExtCore.Args
 let from whom =
     sprintf "from %s" whom
 
-let MAXITERS = 10
-
-let figurePenalty (problem: Problem) =
-    Penalty.penaltyEdgeLengthSqSum problem
-
-let stepSolver (problem: Problem) =
-    let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let neighbors = Neighbors.translateRandomCoord rnd
-    Hillclimber.step neighbors (figurePenalty problem)
-
 // Play with command line arguments
 let inputFile = ref None
 let gui = ref false
@@ -37,7 +27,6 @@ let main args =
         let problem = Model.parseFile inputFile
         printfn "%A" problem
         let solution = solutionOfFigure problem.Figure
-        printfn $"Initial penalty: {figurePenalty problem problem.Figure}"
         printfn $"Solution:\n{Model.deparseSolution solution}"
         if !gui then
             GUI.showGui problem
