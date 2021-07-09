@@ -23,10 +23,14 @@ module Counter =
         CurrentFigure: Model.Figure
     }
 
-    let init problem = {
-        Problem = problem
-        CurrentFigure = problem.Figure
-    }
+    let init (problem: Model.Problem) =
+        let mangledFigure = Model.copyFigure problem.Figure
+        //mangledFigure.Vertices.[1] <- Model.Coord(12, 15)
+        //mangledFigure.Vertices.[2] <- Model.Coord(25, 20)
+        {
+            Problem = problem
+            CurrentFigure = mangledFigure
+        }
 
     type Msg = Increment | Decrement | Reset
 
@@ -38,6 +42,7 @@ module Counter =
         | Reset -> state
     
     let view (state: State) (dispatch) =
+        let scale = 2.0
         DockPanel.create [
             DockPanel.children [
                 Button.create [
@@ -64,8 +69,8 @@ module Counter =
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 Line.create [
-                                    Line.startPoint (float vs.[s].X, float vs.[s].Y)
-                                    Line.endPoint (float vs.[t].X, float vs.[t].Y)
+                                    Line.startPoint (float vs.[s].X * scale, float vs.[s].Y * scale)
+                                    Line.endPoint (float vs.[t].X * scale, float vs.[t].Y * scale)
                                     Line.strokeThickness 2.0
                                     Line.stroke "#e74c3c"
                                 ] :> Avalonia.FuncUI.Types.IView
@@ -75,8 +80,8 @@ module Counter =
                             Model.holeSegments state.Problem
                             |> List.map (fun (s,t) ->
                                 Line.create [
-                                    Line.startPoint (float s.X, float s.Y)
-                                    Line.endPoint (float t.X, float t.Y)
+                                    Line.startPoint (float s.X * scale, float s.Y * scale)
+                                    Line.endPoint (float t.X * scale, float t.Y * scale)
                                     Line.strokeThickness 2.0
                                     Line.stroke "#000000"
                                 ] :> Avalonia.FuncUI.Types.IView
