@@ -59,6 +59,18 @@ type Solution = {
     SolutionVertices: Coord array
 }
 
+let solutionOfFigure (f: Figure): Solution =
+    {
+        SolutionVertices = f.Vertices
+    }
+
+let copyFigure (f: Figure): Figure =
+    {
+        Edges = Array.copy f.Edges
+        Vertices = Array.copy f.Vertices
+    }
+
+
 let copySolution (s: Solution): Solution =
     {
         SolutionVertices = Array.copy s.SolutionVertices

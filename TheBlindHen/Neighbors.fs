@@ -2,11 +2,11 @@ module Neighbors
 
 open Model
 
-let translateRandomCoord (rnd: System.Random) (solution: Solution) =
-    let rndIndex = rnd.Next(solution.SolutionVertices.Length)
+let translateRandomCoord (rnd: System.Random) (figure: Figure) =
+    let rndIndex = rnd.Next(figure.Vertices.Length)
     List.map (fun (dx, dy) -> 
-        let rndCord = Array.item rndIndex solution.SolutionVertices
+        let rndCord = Array.item rndIndex figure.Vertices
         let newCord = Coord(rndCord.X + dx, rndCord.Y + dy)
-        let newSolution = copySolution solution
-        Array.set newSolution.SolutionVertices rndIndex newCord
-        newSolution) [(1, 0); (0, 1); (-1, 0); (0, -1)]
+        let newFigure = copyFigure figure
+        Array.set newFigure.Vertices rndIndex newCord
+        newFigure) [(1, 0); (0, 1); (-1, 0); (0, -1)]
