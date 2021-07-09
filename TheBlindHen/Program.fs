@@ -7,8 +7,8 @@ let from whom =
     sprintf "from %s" whom
 
 [<EntryPoint>]
-let main argv =
-    let inputFile = argv.[1]
+let main args =
+    let inputFile = args.[0]
     let problem = Model.parseFile inputFile
     printfn "%A" problem
     0 // return an integer exit code
