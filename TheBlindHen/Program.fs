@@ -9,11 +9,13 @@ let from whom =
 
 let MAXITERS = 10
 
-let solveProblem (problem: Problem) =
-    let rnd = System.Random 0
+let figurePenalty (problem: Problem) =
+    Penalty.penaltyEdgeLengthSqSum problem
+
+let stepSolver (problem: Problem) =
+    let rnd = System.Random (int System.DateTime.Now.Ticks)
     let neighbors = Neighbors.translateRandomCoord rnd
-    let cost = Penalty.penaltyEdgeLengthSqSum problem
-    Hillclimber.runHillClimber neighbors cost MAXITERS problem.Figure
+    Hillclimber.step neighbors (figurePenalty problem)
 
 // Play with command line arguments
 let inputFile = ref None
@@ -34,9 +36,9 @@ let main args =
     | Some inputFile ->
         let problem = Model.parseFile inputFile
         printfn "%A" problem
-        printfn "Brilliant solution:"
-        let figure = solveProblem problem
-        printfn "%s" (Model.deparseSolution (solutionOfFigure figure))
+        let solution = solutionOfFigure problem.Figure
+        printfn $"Initial penalty: {figurePenalty problem problem.Figure}"
+        printfn $"Solution:\n{Model.deparseSolution solution}"
         if !gui then
             GUI.showGui problem
         else
