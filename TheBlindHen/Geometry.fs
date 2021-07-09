@@ -71,7 +71,7 @@ let vectorDotProduct (v1: Vector) (v2: Vector) =
 
 let vectorsAreParallel (v1: Vector) (v2: Vector) =
     let v2hat = Vector(-v2.Y, v2.X)
-    vectorDotProduct v1 v2hat < EPSILON
+    abs (vectorDotProduct v1 v2hat) < EPSILON
 
 /// Solve a 2x2 matrix problem by inversion.
 /// Returns None if the matrix is singular.
@@ -79,12 +79,12 @@ let vectorsAreParallel (v1: Vector) (v2: Vector) =
 /// 1-dimensional and the target vector happens to fall within that.
 let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
     let d = row1.X * row2.Y - row1.Y * row2.X
-    if d < EPSILON then
+    if abs(d) < EPSILON then
         None
     else
-        let sX = target.X * row2.Y - target.Y * row1.Y
-        let sY = target.X * row2.X - target.Y * row1.X
-        Some (Vector (sX/d, -sY/d))
+        let sX = target.X * row2.Y - target.Y * row2.X
+        let sY = target.X * row1.Y - target.Y * row1.X
+        Some (Vector (sX/d, sY/d))
 
 type SegmentIntersection =
       /// Segments are parallel but not on the same line
@@ -97,18 +97,17 @@ type SegmentIntersection =
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
     let v1 = vectorOfSegment seg1
     let v2 = vectorOfSegment seg2
-    let p1,q1 = seg1
+    let p1,_ = seg1
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some sol -> Point (sol.X, sol.Y)
+    | Some sol -> Point (-sol.X, -sol.Y)
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
+        // TODO: Refactor to save a sqrt
         if vectorsAreParallel startDiff v1 then
-            let len1 = v1.Length
-            let endDiff = Vector(float (q2.X - q1.X), float (q2.Y - q1.Y))
-            Overlap (startDiff.Length / len1, endDiff.Length / len1)
+            Overlap (float(p1.X - p2.X)/v1.X, float(p1.X - q2.X)/v1.X)
         else
             Parallel
         

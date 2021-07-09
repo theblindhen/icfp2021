@@ -83,7 +83,7 @@ type GeometryTestClass () =
     [<TestMethod>]
     member this.TestSegmentsIntersectOverlap4 () =
         let seg1 = (Coord (6, 7), Coord (7, 8))
-        let seg2 = (Coord (2, 1), Coord (1, 0))
+        let seg2 = (Coord (2, 3), Coord (1, 2))
         let expected = Overlap (-4.0, -5.0)
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)       
 
@@ -91,14 +91,14 @@ type GeometryTestClass () =
     member this.TestSegmentsIntersectPoint1 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
         let seg2 = (Coord (2, 0), Coord (0, 2))
-        let expected = Point (1.0, 1.0)
+        let expected = Point (0.5, 0.5)
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint2 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
-        let seg2 = (Coord (2, 0), Coord (0, 2))
-        let expected = Point (0.5, 0.5)
+        let seg2 = (Coord (1, 0), Coord (0, 1))
+        let expected = Point (0.25, 0.5)
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)    
 
     [<TestMethod>]
@@ -121,5 +121,26 @@ type GeometryTestClass () =
         let seg2 = (Coord (1, 7), Coord (5, -1))
         let expected = Point (0.25, 0.5)
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)      
+
+    [<TestMethod>]
+    member this.TestSegmentsIntersectPoint6 () =
+        let seg1 = (Coord (0, 0), Coord (2, 2))
+        let seg2 = (Coord (0, 2), Coord (2, 0))
+        let expected = Point (0.5, 0.5)
+        Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
+
+    [<TestMethod>]
+    member this.TestSegmentsIntersectPoint7 () =
+        let seg1 = (Coord (0, 0), Coord (2, 2))
+        let seg2 = (Coord (0, 2), Coord (-2, 4))
+        let expected = Point (0.5, -0.5)
+        Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
+
+    [<TestMethod>]
+    member this.TestSegmentsIntersectPoint8 () =
+        let seg1 = (Coord (2, 2), Coord (3, 3))
+        let seg2 = (Coord (-2, 2), Coord (-3, 3))
+        let expected = Point (-2.0, -2.0)
+        Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
 
