@@ -59,6 +59,11 @@ type Solution = {
     SolutionVertices: Coord array
 }
 
+let copySolution (s: Solution): Solution =
+    {
+        SolutionVertices = Array.copy s.SolutionVertices
+    }
+
 let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
         Edges = raw.edges |> Array.map (fun [|x; y|] -> (x, y))
@@ -80,3 +85,17 @@ let parseFile (file: string) : Problem =
 
 let deparseSolution (sol: Solution) : string =
     """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""
+    
+let holeEdges (problem: Problem) =
+    let edges, _ =
+        problem.Hole
+        |> Array.fold (fun (edges, olast) cur ->
+            match olast with
+            | None -> (edges, Some cur)
+            | Some last -> ((last, cur)::edges, Some cur)) ([], None)
+    edges
+
+let figureEdges (fig: Figure) =
+    fig.Edges
+    |> Array.toList
+    |> List.map (fun (v1, v2) -> (fig.Vertices.[v1], fig.Vertices.[v2]))

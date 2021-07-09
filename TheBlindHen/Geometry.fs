@@ -4,6 +4,8 @@ open Model
 
 exception Exception of string
 
+type Edge = Coord * Coord
+
 /// Invariant that vertices V1-3 are sorted in increasing order of their Y-coordinate
 /// constructor will sort input
 // type Triangle = 
@@ -25,17 +27,16 @@ exception Exception of string
 //         //     |> sqrt
 //     end
 
-
 /// are sorted in increasing order of their Y-coordinate, then X-coordinate
-let sortSimplePolygon (vertices : Coord array) =
-    let unsortedEdges : (VertexId * VertexId) list = List.zip [0..(vertices.Length-1)] [1..(vertices.Length-1)] 
-    let edges = unsortedEdges
-                |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].X vertices.[vdx2].X)
-                |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].Y vertices.[vdx2].Y)
-    (vertices, edges)
+// let sortSimplePolygon (vertices : Coord array) =
+//     let unsortedEdges : (VertexId * VertexId) list = List.zip [0..(vertices.Length-1)] [1..(vertices.Length-1)] 
+//     let edges = unsortedEdges
+//                 |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].X vertices.[vdx2].X)
+//                 |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].Y vertices.[vdx2].Y)
+//     (vertices, edges)
 
-let innerCoordsOfSimplePolygon  vertices =
-    let edges
+// let innerCoordsOfSimplePolygon  vertices =
+//     let edges
 
 
 
@@ -44,3 +45,7 @@ let innerCoordsOfSimplePolygon  vertices =
 //     [triangle.Item1; triangle.Item2; triangle.Item3]
 
 
+
+let edgeLengthSq ((p1, p2): Edge) =
+    let dx, dy = p1.X - p2.X, p1.Y - p2.Y
+    dx*dx + dy*dy
