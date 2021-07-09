@@ -2,7 +2,13 @@ module GUI
 
 open System
 
+// We haven't found a good way to pass arguments through App, so we use a global
+// var here.
 let problemGlobalVar: Model.Problem option ref = ref None
+
+// The stepper can't be part of the state since the state has to be equatable in
+// Avalonia FuncUI.
+let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
 let figurePenalty (problem: Model.Problem) =
     Penalty.penaltyEdgeLengthSqSum problem
@@ -43,10 +49,10 @@ module MVU =
         match msg with
         | Forward steps ->
             let newIndex = state.Index + steps
+            let stepper = Option.get !stepperGlobalVar
             while newIndex >= state.History.Count do
                 let lastState = state.History.[state.History.Count - 1]
-                // TODO: pre-compute a stepper
-                state.History.Add (stepSolver state.Problem lastState)
+                state.History.Add (stepper lastState)
             { state with Index = newIndex }
         | Backward steps -> { state with Index = max 0 (state.Index - steps) }
         | Reset -> { state with Index = 0 }
@@ -172,6 +178,7 @@ type App() =
 
 let showGui problem =
         problemGlobalVar := Some problem 
+        stepperGlobalVar := Some (stepSolver problem)
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
