@@ -1,7 +1,5 @@
 module Hillclimber
 
-let cons x y = x :: y
-
 
 /// Generates an infinite sequence of solutions using hill-climbing
 /// to visit neighbors with the lowest cost (or the current solution,
@@ -11,6 +9,7 @@ let cons x y = x :: y
 /// is deterministic, then repeats in the solution sequence implies that a local
 /// minimum has been reached
 let hillClimber neighbors cost =
+    let cons x y = x :: y
     Seq.unfold (fun solution -> 
         solution 
         |> neighbors 
