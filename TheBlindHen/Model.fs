@@ -43,13 +43,17 @@ type Problem = {
     Epsilon: int
 }
 
-let fromRawFigure (raw: Raw.Figure) : Figure =
+type Solution = {
+    SolutionVertices: Coordinate array
+}
+
+let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
         Edges = raw.edges |> Array.map (fun [|x; y|] -> (x, y))
         Vertices = raw.vertices |> Array.map (fun [|x; y|] -> (x, y))
     }
 
-let fromRaw (raw: Raw.Problem) : Problem =
+let private fromRawProblem (raw: Raw.Problem) : Problem =
     {
         Hole = raw.hole |> Array.map (fun [|x; y|] -> (x, y))
         Figure = raw.figure |> fromRawFigure
@@ -57,7 +61,10 @@ let fromRaw (raw: Raw.Problem) : Problem =
     }
 
 let parseString (str: string) : Problem =
-    fromRaw (Raw.parseString str)
+    fromRawProblem (Raw.parseString str)
 
 let parseFile (file: string) : Problem =
-    fromRaw (Raw.parseFile file)
+    fromRawProblem (Raw.parseFile file)
+
+let deparseSolution (sol: Solution) : string =
+    """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun (x,y) -> $"[{x},{y}]")) + """]}"""
