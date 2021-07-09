@@ -28,25 +28,21 @@ type Segment = Coord * Coord
 //         //     |> sqrt
 //     end
 
-/// are sorted in increasing order of their Y-coordinate, then X-coordinate
-// let sortSimplePolygon (vertices : Coord array) =
-//     let unsortedEdges : (VertexId * VertexId) list = List.zip [0..(vertices.Length-1)] [1..(vertices.Length-1)] 
-//     let edges = unsortedEdges
-//                 |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].X vertices.[vdx2].X)
-//                 |> List.sortBy (fun (vdx1, vdx2) -> min vertices.[vdx1].Y vertices.[vdx2].Y)
-//     (vertices, edges)
+let segmentLengthSq ((p1, p2): Segment) =
+    let dx, dy = p1.X - p2.X, p1.Y - p2.Y
+    dx*dx + dy*dy
 
-// let innerCoordsOfSimplePolygon  vertices =
+/// sort segments in increasing order of their Y-coordinate, then X-coordinate
+let sortSegments (segments : Segment list) =
+    segments
+    |> List.sortBy (fun (c1, c2) -> min c1.X c2.X)
+    |> List.sortBy (fun (c1, c2) -> min c1.Y c2.Y)
+
+/// assumes segments are sorted
+// let innerCoordsOfSimplePolygon  segments =
 //     let edges
 
 
 
-// let innerCoordsOfTriangle (triangle: Triangle) =
-
-//     [triangle.Item1; triangle.Item2; triangle.Item3]
 
 
-
-let segmentLengthSq ((p1, p2): Segment) =
-    let dx, dy = p1.X - p2.X, p1.Y - p2.Y
-    dx*dx + dy*dy
