@@ -47,8 +47,8 @@ module Counter =
                         |> Array.toList
                         |> List.map (fun (s,t) ->
                             Line.create [
-                                Line.startPoint (float (fst vs.[s]), float (snd vs.[s]))
-                                Line.endPoint (float (fst vs.[t]), float (snd vs.[t]))
+                                Line.startPoint (float vs.[s].X, float vs.[s].Y)
+                                Line.endPoint (float vs.[t].X, float vs.[t].Y)
                                 Line.strokeThickness 2.0
                                 Line.stroke "#e74c3c"
                             ] :> Avalonia.FuncUI.Types.IView
