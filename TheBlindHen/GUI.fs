@@ -2,6 +2,8 @@ module GUI
 
 open System
 
+let WINDOWSIZE = 1200.0
+
 // We haven't found a good way to pass arguments through App, so we use a global
 // var here.
 let problemGlobalVar: Model.Problem option ref = ref None
@@ -32,11 +34,11 @@ let figurePenalty (problem: Model.Problem) =
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let neighbors = Neighbors.balancedCollectionOfNeighbors rnd
+    let getNeighbor = Neighbors.balancedCollectionOfNeighbors rnd
     let penalty = figurePenalty problem
     let bb = Model.holeBoundingBox problem
     fun figure ->
-        let result = Hillclimber.step neighbors penalty figure
+        let result = Hillclimber.step getNeighbor penalty figure
         // TODO: this is just debug printing
         printfn "penalty = %f + %f"
             (Penalty.penaltyEdgeLengthSqSum problem result)
@@ -81,11 +83,12 @@ module MVU =
         | CanvasMoved of Avalonia.Point
 
     let init (problem: Model.Problem): State * Cmd<Msg> =
+        let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
             Index = 0
-            Scale = 2.0
+            Scale = 0.9 * WINDOWSIZE / float (max maxCoord.X maxCoord.Y)
             Selection = []
             Tool = Move
             InProgress = None
@@ -172,15 +175,16 @@ module MVU =
     let view (state: State) (dispatch) =
         let scale = state.Scale
         let figure = state.History.[state.Index]
-        let vs =
+        let shownFigure =
             match state.Tool, state.InProgress with
             | Move, Some ((x1, y1), (x2, y2)) ->
                 let (dx, dy) = (x2 - x1, y2 - y1)
-                (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+                Transformations.translateSelectedVerticies state.Selection (dx, dy) figure
             | Rotate, Some ((x1, y1), (x2, y2)) ->
                 let dy = y2 - y1
-                (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure).Vertices
-            | _ -> figure.Vertices
+                Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure
+            | _ -> figure
+        let vs = shownFigure.Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -263,7 +267,7 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem state.History.[state.Index]}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem shownFigure}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
@@ -347,8 +351,8 @@ type MainWindow() as this =
     inherit HostWindow()
     do
         base.Title <- "TestUI"
-        base.Width <- 400.0
-        base.Height <- 400.0
+        base.Width <- WINDOWSIZE
+        base.Height <- WINDOWSIZE
         
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
