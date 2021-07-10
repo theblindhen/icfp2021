@@ -20,27 +20,21 @@ let stepSolver (problem: Model.Problem) =
     let penalties = Penalty.figurePenalties problem
     let penaltySum fig = List.sum (penalties fig)
     let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 rnd ()
-    fun figure ->
-        let result = Option.defaultValue figure (step figure)
-        // TODO: this is just debug printing
-        let resPenalties = penalties result
-        let spenalties =
-            resPenalties
-            |> List.map (fun p -> sprintf "%.2f" p) 
-            |> String.concat " + "
-        printfn $"penalty = {spenalties} = {List.sum(resPenalties)}"
-        result
+    step
 
 let solve (problemPath: string) (problemNo: int) =
     let problem = Model.parseFile $"{problemPath}/{problemNo}.problem" // TODO: call from GUI
     //let solutionPath = Some ($"{problemPath}/{problemNo}-solutions/")
     let stepper = stepSolver problem
-    let outsideHolePenalty = Penalty.outsideHolePenalty problem // TODO: repeat
     let rec run i figure =
-        if i = 100_000 then
-            ()
-        else
-            let figure = stepper figure
-            printfn "%7d %f" i (outsideHolePenalty figure)
+        let (result, penalty) = stepper figure
+        printfn "  %7d %f" i penalty
+        match result with
+        | None ->
+            printfn "No more iterations left. Penalty %f" penalty
+        | Some figure when penalty = 0.0 ->
+            printfn "Problem solved! OMG!"
+            printfn "%s" (Model.deparseSolution (Model.solutionOfFigure figure))
+        | Some figure ->
             run (i + 1) figure
     run 0 problem.Figure
