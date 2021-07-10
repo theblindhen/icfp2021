@@ -109,11 +109,27 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
         else
             None
 
-let segmentDecomposition (seg: Segment) (polygon: Coord array) : SegmentIntersect list =
-    []
-    // |> List.map (fun inters ->
-    //      match inters with
-    //      | Parallel -> None
-    //      | Overlap (a,b) -> Some (DecomposeOverlap (a,b))
-    //      | Point (x,_) -> Some (DecomposePoint x))
-    // |> List.filterSome 
+let segmentDecomposition (seg: Segment) (problem: Problem) : SegmentIntersect list =
+    holeSegments problem
+    |> List.choose (segmentsIntersect seg)
+    |> List.map (fun ints ->
+        match ints with
+        | Overlap (a,b) ->
+            let a, b = 
+                if a < b then
+                    max a 0., min b 1.
+                else
+                    max b 0., min a 1.
+            if abs(a - b) < EPSILON then
+                Point a // TODO: Test for this case
+            else
+                Overlap (a, b)
+        | _ -> ints)
+    |> List.filter (fun ints ->
+        match ints with
+        | Point a -> a >= 0. && a <= 1.
+        | Overlap (a,b) -> a <= 1. && b >= 0. ) 
+    |> List.sortBy (fun ints ->
+        match ints with
+        | Point a -> a
+        | Overlap (a,_) -> a)
