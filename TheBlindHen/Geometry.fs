@@ -177,13 +177,27 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
     // Convert to Decomposition
     // Convert repeated points to CrossPoint / TouchPoint
     let lastDir  =
-        // TODO: This should only be computed if the first Point in
-        // intersections is with hole-mult 0.
-        let firstIdx, _ = intersections.[0]
+        // Compute the last Point's direction
+        // This should only be done if the first Point is an exit-point, i.e.
+        // intersects at 0
         let segArr = Array.ofList simplePolygon
+        let findPoint =
+            intersections
+            |> List.tryFind (fun (_, ints) ->
+                match ints with
+                | Point _ -> true
+                | _ -> false)
+        match findPoint with
+        | None -> CW // No points, doesn't matter
+        | Some (_, Overlap _) -> CW // Will never happen
+        | Some (firstIdx, Point (_, _, b)) ->
+        if not (isZero b) then CW // first Point is not an exit, doesn't matter
+        else
         let segv = vectorOfSegment seg
         let rec getLastDir i =
             let i = if i = 0 then segArr.Length-1 else i - 1
+            if i = firstIdx then CW // Failsafe
+            else
             let holeSegv = vectorOfSegment segArr.[i]
             let d = vectorDeterminant segv holeSegv
             if abs(d) < EPSILON then
