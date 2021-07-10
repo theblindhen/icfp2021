@@ -61,6 +61,40 @@ let penaltyEdgeRatioSum (problem: Problem) =
 //             else
 //                 0.0)
 
+/// TODO: replace with getHolePoints
+let isCoordInsideHole holeSegments coord =
+    let segment = (Coord (-1,-1), coord)
+    let decoms = segmentDecomposition segment holeSegments
+    let rec iter isInside =
+        function
+        | CrossPoint _ :: decomTl -> iter (not isInside) decomTl
+        | TouchPoint _ :: decomTl -> iter isInside decomTl
+        | Aligned (_,b) :: decomTl -> if b = 1.0 then true else iter isInside decomTl
+        | [] -> isInside
+    iter false decoms
+
+/// returns the ratio of the sement that is outside the hole
+let segmentOutsideHole holeSegments (a,b) =
+    let decoms = segmentDecomposition (a,b) holeSegments
+    let rec iter (isInside, acc, last) =
+        function
+        | CrossPoint a :: decomTl -> 
+            let acc = if isInside then acc else acc + a - last
+            iter (not isInside, (if isInside then acc else acc + a - last), a) decomTl
+        | TouchPoint _ :: decomTl -> iter (isInside, acc, last) decomTl
+        | Aligned (a,b) :: decomTl -> 
+            let accUpd = if isInside then acc else acc + a - last
+            let lastUpd = if isInside then b else last
+            iter (not isInside, acc, lastUpd) decomTl            
+        | [] -> if isInside then acc else acc + 1.0 - last
+    iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
+
+let penaltyOutsideHole (problem: Problem) =
+    let hole = holeSegments problem
+    figureSegments problem.Figure
+    |> List.map (fun seg -> (seg, segmentOutsideHole hole seg))
+    |> List.sumBy (fun (seg, ratio) -> ratio * (sqrt (float (segmentLengthSq seg))))
+
 let rasterizeHole (problem: Problem) =
     // TODO: bitmap, not full color
     // TODO: pick the right resolution

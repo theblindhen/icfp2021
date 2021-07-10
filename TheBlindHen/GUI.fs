@@ -67,6 +67,7 @@ module MVU =
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
+        Origo: Model.Coord
         Selection: int list
         Tool: Tool
         InProgress: ((int * int) * (int * int)) option
@@ -74,8 +75,7 @@ module MVU =
 
     type Msg =
         | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
-        | Select of Avalonia.Point
-        | Deselect of Avalonia.Point
+        | Select of Avalonia.Point | SelectAll | DeselectAll
         | CanvasPressed of Avalonia.Point
         | CanvasReleased of Avalonia.Point
         | CanvasMoved of Avalonia.Point
@@ -89,6 +89,7 @@ module MVU =
             Selection = []
             Tool = Move
             InProgress = None
+            Origo = Model.Coord (0, 0)
         }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
@@ -133,12 +134,15 @@ module MVU =
             let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
             match selectedCoordIndex with
             | None -> state, Cmd.none
-            | Some index -> { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
-        | Deselect p ->
-            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
-            match selectedCoordIndex with
-            | None -> state, Cmd.none
-            | Some index -> { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
+            | Some index ->
+                if List.contains index state.Selection then
+                    { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
+                else
+                    { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
+        | SelectAll ->
+            { state with Selection = Array.mapi (fun i _ -> i) state.History.[state.Index].Vertices |> List.ofSeq }, Cmd.none
+        | DeselectAll ->
+            { state with Selection = [] }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             { state with InProgress = Some ((x, y), (x, y)) }, Cmd.none
@@ -149,15 +153,19 @@ module MVU =
                 { state with InProgress = Some ((x1, y1), (x2, y2)) }, Cmd.none
             | _ -> state, Cmd.none
         | CanvasReleased p ->
+            let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool, state.InProgress with
             | Move, Some ((x1, y1), _) ->
-                let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
                 let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy)) state
                 { translatedState with InProgress = None }, Cmd.none
             | Rotate, Some ((x1, y1), _) ->
-                let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAround state.Selection (x1, y1)) state
-                { translatedState with InProgress = None }, Cmd.none
+                if x1 = x2 && y1 = y2 then
+                    { state with Origo = pointToCoord p; InProgress = None }, Cmd.none
+                else
+                    let dy = y2 - y1
+                    let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy)) state
+                    { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
         | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
     
@@ -169,6 +177,9 @@ module MVU =
             | Move, Some ((x1, y1), (x2, y2)) ->
                 let (dx, dy) = (x2 - x1, y2 - y1)
                 (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+            | Rotate, Some ((x1, y1), (x2, y2)) ->
+                let dy = y2 - y1
+                (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure).Vertices
             | _ -> figure.Vertices
         DockPanel.create [
             DockPanel.children [
@@ -240,6 +251,14 @@ module MVU =
                             RadioButton.isChecked (state.Tool == Rotate)
                             RadioButton.onChecked (fun _ -> dispatch (SelectTool Rotate))
                         ]
+                        Button.create [
+                            Button.content "Select all"
+                            Button.onClick (fun _ -> dispatch SelectAll)
+                        ]
+                        Button.create [
+                            Button.content "Deselect all"
+                            Button.onClick (fun _ -> dispatch DeselectAll)
+                        ]
                     ]
                 ]
                 TextBox.create [
@@ -251,11 +270,9 @@ module MVU =
                     Canvas.onPointerPressed (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
                             let shift = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Shift)
-                            let ctrl = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Control)
                             let position = evt.GetPosition null
-                            match shift, ctrl with
-                            | true, false -> dispatch (Select position)
-                            | false, true -> dispatch (Deselect position)
+                            match shift with
+                            | true -> dispatch (Select position)
                             | _ -> dispatch (CanvasPressed position))
                     Canvas.onPointerMoved (fun evt ->
                             dispatch (CanvasMoved (evt.GetPosition null)))
@@ -286,6 +303,22 @@ module MVU =
                                     Ellipse.height (3.0 * scale)
                                     Ellipse.fill "#95a5a6"
                                 ] :> Avalonia.FuncUI.Types.IView)
+                        ) @
+                        (
+                            [
+                                Line.create [
+                                    Line.startPoint (float state.Origo.X * scale, 0.0)
+                                    Line.endPoint (float state.Origo.X * scale, 2000.0)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#D3D3D3"
+                                ] :> Avalonia.FuncUI.Types.IView;
+                                Line.create [
+                                    Line.startPoint (0.0, float state.Origo.Y * scale)
+                                    Line.endPoint (2000.0, float state.Origo.Y * scale)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#D3D3D3"
+                                ] :> Avalonia.FuncUI.Types.IView
+                            ]
                         ) @
                         (
                             Model.holeSegments state.Problem
