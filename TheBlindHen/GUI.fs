@@ -34,11 +34,11 @@ let figurePenalty (problem: Model.Problem) =
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let neighbors = Neighbors.balancedCollectionOfNeighbors rnd
+    let getNeighbor = Neighbors.balancedCollectionOfNeighbors rnd
     let penalty = figurePenalty problem
     let bb = Model.holeBoundingBox problem
     fun figure ->
-        let result = Hillclimber.step neighbors penalty figure
+        let result = Hillclimber.step getNeighbor penalty figure
         // TODO: this is just debug printing
         printfn "penalty = %f + %f"
             (Penalty.penaltyEdgeLengthSqSum problem result)
