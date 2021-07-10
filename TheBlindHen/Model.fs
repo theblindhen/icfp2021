@@ -119,10 +119,10 @@ let figureSegments (fig: Figure) =
 
 /// Returns (smallest, largest)
 let holeBoundingBox (problem: Problem) =
-    let xs = problem.Hole |> Array.toList |> List.map (fun c -> c.X)
-    let ys = problem.Hole |> Array.toList |> List.map (fun c -> c.Y)
-    let minx = xs |> List.min
-    let miny = ys |> List.min
-    let maxx = xs |> List.max
-    let maxy = ys |> List.max
+    let xs = problem.Hole |> Array.map (fun c -> c.X)
+    let ys = problem.Hole |> Array.map (fun c -> c.Y)
+    let minx = xs |> Array.min
+    let miny = ys |> Array.min
+    let maxx = xs |> Array.max
+    let maxy = ys |> Array.max
     (Coord (minx, miny), Coord (maxx, maxy))
