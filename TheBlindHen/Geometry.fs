@@ -158,11 +158,6 @@ type Decomposition =
 /// a segment's end point is always the next segment's starting point 
 let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
     // Get the ordered list of intersections
-    let overlapAdjacent point overlap =
-        match point, overlap with
-        | Point (a, _, _), Overlap (b1, b2) ->
-            abs (a - b1) < EPSILON || abs (a - b2) < EPSILON
-        | _ -> false
     let intersections = segmentIntersectionList seg simplePolygon
     if List.isEmpty intersections then
         []
