@@ -84,11 +84,12 @@ let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
     else
         let sX = target.X * row2.Y - target.Y * row2.X
         let sY = target.X * row1.Y - target.Y * row1.X
-        Some (Vector (sX/d, sY/d))
+        Some (Vector (sX/d, sY/d), d)
         
+type Direction = CW | CCW
 type SegmentIntersect = 
       /// Multiplier on base segment to get the intersection point
-    | Point of float
+    | Point of float * Direction
       /// Multipliers on base segment for start/end of the overlap
     | Overlap of float * float
 
@@ -99,7 +100,7 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some sol -> Some (Point (-sol.X))
+    | Some (sol, det) -> Some (Point (-sol.X, if det < 0. then CCW else CW))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
@@ -112,27 +113,86 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
 let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : SegmentIntersect list =
     intersectors 
     |> List.choose (segmentsIntersect seg)
-    |> List.map (fun ints ->
-        match ints with
+    |> List.map (function
         | Overlap (a,b) ->
             let a, b = 
                 if a < b then
                     max a 0., min b 1.
                 else
                     max b 0., min a 1.
-            if abs(a - b) < EPSILON then
-                Point a // TODO: Test for this case
-            else
-                Overlap (a, b)
-        | _ -> ints)
-    |> List.filter (fun ints ->
-        match ints with
-        | Point a -> a >= 0. && a <= 1.
+            Overlap (a, b)
+        | ints -> ints)
+    |> List.filter (function
+        | Point (a,_) -> a >= 0. && a <= 1.
         | Overlap (a,b) -> a <= 1. && b >= 0. ) 
 
-let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : SegmentIntersect list =
-    segmentIntersectionList seg simplePolygon
-    |> List.sortBy (fun ints ->
-        match ints with
-        | Point a -> a
-        | Overlap (a,b) -> a)
+type Decomposition =
+    | TouchPoint of float
+    | CrossPoint of float
+    | Aligned of float * float
+
+let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
+    let intersections = segmentIntersectionList seg simplePolygon
+    let overlapEndpoints : HashSet<int> =
+        intersections
+        |> List.collect (function
+                            // TODO: These numbers should be scaled by seg.Length
+                         | Overlap (a,b) -> [ int (round a); int (round b) ]
+                         | _ -> [])
+        |> HashSet.ofList
+    intersections
+    |> List.filter (function
+        | Overlap _ -> true
+        | Point (a,_) ->
+            // TODO: These numbers should be scaled by seg.Length
+            not (HashSet.contains (int (round a)) overlapEndpoints))
+    |> List.map (function
+        | Overlap (a, b) -> Aligned (a,b)
+        | Point (a, _) -> CrossPoint (a) // TODO: Wrong
+        )
+    |> List.sortBy (function
+        | TouchPoint a -> a
+        | CrossPoint a -> a
+        | Aligned (a,_) -> a)
+
+
+// /// A structure for precomputed set of points in the hole
+// type HolePoints = {
+//     Arr: bool[,]
+//     Dx: int
+//     Dy: int
+// }
+
+// /// Return the set of points of the hole of the problem
+// let getHolePoints (problem: Problem) =
+//     let holeSegs = holeSegments problem
+//     let cmin, cmax = holeBoundingBox problem
+//     let arr = Array2D.init (cmax.X - cmin.X + 1) (cmax.Y - cmin.Y + 1) (fun _ _ -> false)
+//     for y in cmin.Y .. cmax.Y do
+//         let seg = (Coord (cmin.X, y), Coord (cmax.X, y))
+//         let lastCross = ref -1.
+//         let inHole = ref false
+//         segmentDecomposition seg holeSegs
+//         |> List.iter (fun ints ->
+//             match ints with
+//             | Point a ->
+//                 if !inHole then
+//                     let startX = ceil (!lastCross-EPSILON)
+//                     let endX = floor (a + EPSILON)
+//                     for x in  startX .. endX  do
+//                         if float x >= cmin.X && float x <= cmax.X then
+//                             arr[x - cmin.X, y - cmin.Y] = true
+//                 )
+
+//     { Arr = arr
+//       Dx = cmin.X
+//       Dy = cmin.Y }
+
+// /// Is the given coord in the hole
+// let inHole (c: Coord) (hole: HolePoints) =
+//     let lX = c.X - hole.Dx
+//     let lY = c.Y - hole.Dy
+//     if lX < 0 || lX >= Array2D.length1 hole.Arr || lY < 0 || lY >= Array2D.length2 hole.Arr then
+//         false
+//     else 
+//         hole.Arr.[lX, lY]
