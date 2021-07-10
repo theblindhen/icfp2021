@@ -2,11 +2,6 @@ open System
 open Model
 open ExtCore.Args
 
-// TODO: Purge, remember also the unittest
-// Define a function to construct a message to print
-let from whom =
-    sprintf "from %s" whom
-
 // Play with command line arguments
 let inputFile = ref None
 let gui = ref false
