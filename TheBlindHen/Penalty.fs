@@ -101,9 +101,9 @@ let segmentStartsInside holeSegments =
 
 /// returns the ratio of the sement that is outside the hole
 let segmentOutsideHole holeSegments =
-    let isInside = isCoordInsideHole holeSegments
-    memoize (fun (a,b)->
-        let decoms = segmentDecomposition (a,b) holeSegments
+    let isInside = segmentStartsInside holeSegments
+    memoize (fun seg ->
+        let decoms = segmentDecomposition seg holeSegments
         let rec iter (isInside, acc, lastCross) =
             function
             | DecPoint (a, Cross) :: decomTl -> 
@@ -116,7 +116,7 @@ let segmentOutsideHole holeSegments =
                 let lastUpd = b
                 iter (isInside, accUpd, lastUpd) decomTl            
             | [] -> if isInside then acc else acc + 1.0 - lastCross
-        iter (isInside a, 0.0, 0.0) decoms
+        iter (isInside seg, 0.0, 0.0) decoms
         )
 
 let penaltyEdgeRatioOutside (problem: Problem) =

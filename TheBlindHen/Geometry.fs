@@ -7,6 +7,9 @@ exception Exception of string
 /// Line segment
 type Segment = Coord * Coord
 
+let stringOfSegment (c1: Coord, c2: Coord) =
+    $"({c1})--({c2})"
+
 type Vector = 
     struct 
         val X: float

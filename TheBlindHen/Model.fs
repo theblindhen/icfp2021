@@ -40,6 +40,7 @@ type Coord =
             
         //     dX + dY
         //     |> sqrt
+        override c.ToString() = $"({c.X},{c.Y})"
     end
 
 type VertexId = int
@@ -108,6 +109,7 @@ let holeSegments (problem: Problem) =
         |> Array.fold (fun (edges, last) cur ->
             ((last, cur)::edges, cur)) ([], last)
         |> fst
+        |> List.rev
 
 let figureSegments (fig: Figure) =
     fig.Edges

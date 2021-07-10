@@ -56,6 +56,14 @@ type SegmentOutsideHoleTestClass () =
             seg (4, 20) (34, 100)
             seg (34, -100) (0, -30)
         ]
+    // Inspired by Problem 13
+    let largeDiamond = 
+        [
+            seg (20, 0) (40, 20)
+            seg (40, 20) (20, 40)
+            seg (20, 40) (0, 20)
+            seg (0, 20) (20, 0)
+        ]
 
     [<TestMethod>]
     member this.TestIsCoordInsideHole1 () = 
@@ -142,6 +150,16 @@ type SegmentOutsideHoleTestClass () =
     member this.TestSegmentStartsInside8 () = 
         let segment = seg (0,-3) (6,6)
         Assert.IsFalse(segmentStartsInside testHole3 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentStartsInside9 () = 
+        let segment = seg (20,19) (20,5)
+        Assert.IsTrue(segmentStartsInside largeDiamond segment)
+
+    [<TestMethod>]
+    member this.TestSegmentStartsInside10 () = 
+        let segment = seg (20,5) (20,19)
+        Assert.IsTrue(segmentStartsInside largeDiamond segment)
 
 
 
@@ -235,6 +253,26 @@ type SegmentOutsideHoleTestClass () =
     member this.TestSegmentOutsideHole18 () = 
         let seg = seg (2, 10) (10, 10)
         Assert.AreEqual(0.0, segmentOutsideHole invSharpWedgeHole seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole19 () = 
+        let seg = seg (20, 9) (20, 1)
+        Assert.AreEqual(0.0, segmentOutsideHole largeDiamond seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole20 () = 
+        let seg = seg (20, 9) (20, 1)
+        Assert.AreEqual(0.0, segmentOutsideHole largeDiamond seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole21 () = 
+        let seg = seg (1, 20) (9, 20)
+        Assert.AreEqual(0.0, segmentOutsideHole largeDiamond seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole22 () = 
+        let seg = seg (20, 6) (20, 37)
+        Assert.AreEqual(0.0, segmentOutsideHole largeDiamond seg, EPSILON)
 
     [<TestMethod>]
     member this.TestSortSegments () =
