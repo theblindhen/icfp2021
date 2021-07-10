@@ -1,6 +1,6 @@
 module Program =
     let [<EntryPoint>] main _ =
-        let test = UnitTests.GeometryDecomposeTestClass ()
-        test.TestSegmentDecomposeOverlap2 ()
+        let test = UnitTests.SegmentOutsideHoleTestClass ()
+        test.TestSegmentOutsideHole7 ()
         0
 

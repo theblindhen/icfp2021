@@ -64,16 +64,16 @@ let penaltyEdgeRatioSum (problem: Problem) =
 let isCoordInsideHole holeSegments coord =
     let segment = (Coord (-1,-1), coord)
     let decoms = segmentDecomposition segment holeSegments
-    let isOne a = abs (a - 1.) < EPSILON
+    let (=~) x y = abs (x - y) < EPSILON
     let rec iter isInside =
         function
         | DecPoint (a, typ) :: decomTl ->
-            if isOne a then
+            if a =~ 1. then
                 true
             else
                 iter (if typ = Cross then not isInside else isInside) decomTl
         | DecOverlap (_,b) :: decomTl ->
-            if isOne b then
+            if b =~ 1. then
                 true
             else
                 iter isInside decomTl
@@ -83,17 +83,18 @@ let isCoordInsideHole holeSegments coord =
 /// returns the ratio of the sement that is outside the hole
 let segmentOutsideHole holeSegments (a,b) =
     let decoms = segmentDecomposition (a,b) holeSegments
-    let rec iter (isInside, acc, last) =
+    let rec iter (isInside, acc, lastCross) =
         function
         | DecPoint (a, Cross) :: decomTl -> 
-            let acc = if isInside then acc else acc + a - last
-            iter (not isInside, (if isInside then acc else acc + a - last), a) decomTl
-        | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, last) decomTl
+            let accUpd = if isInside then acc else acc + a - lastCross
+            let lastUpd = a
+            iter (not isInside, accUpd, lastUpd) decomTl
+        | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, lastCross) decomTl
         | DecOverlap (a,b) :: decomTl -> 
-            let accUpd = if isInside then acc else acc + a - last
-            let lastUpd = if isInside then b else last
-            iter (not isInside, acc, lastUpd) decomTl            
-        | [] -> if isInside then acc else acc + 1.0 - last
+            let accUpd = if isInside then acc else acc + a - lastCross
+            let lastUpd = b
+            iter (isInside, accUpd, lastUpd) decomTl            
+        | [] -> if isInside then acc else acc + 1.0 - lastCross
     iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
 
 let penaltyOutsideHole (problem: Problem) =
