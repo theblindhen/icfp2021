@@ -5,10 +5,12 @@
     <WarnOn>3390;$(WarnOn)</WarnOn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Util.fs" />
     <Compile Include="SimulatedAnnealing.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Geometry.fs" />
     <Compile Include="Transformations.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="Neighbors.fs" />
     <Compile Include="Hillclimber.fs" />
     <Compile Include="Penalty.fs" />

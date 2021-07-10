@@ -46,5 +46,5 @@ let balancedCollectionOfNeighbors (rnd: System.Random) (figure: Figure) =
     weightedChoice [
         4.0, translateRandomCoord;
         1.0, translateFullFigureRandomly;
-//      0.1, rotateFullFigureAroundRandomPoint;
+        0.1, rotateFullFigureAroundRandomPoint;
     ] rnd figure

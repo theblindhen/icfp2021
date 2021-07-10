@@ -23,6 +23,8 @@ let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
         Array.tryFindIndex (fun c -> c = nearestPoint) figure.Vertices
     else None
 
+let penalty: (Model.Figure -> float) option ref = ref None
+
 module MVU =
     open Elmish
     open System.IO
@@ -65,6 +67,7 @@ module MVU =
         },
         Cmd.OfFunc.attempt (fun problem ->
                 stepperGlobalVar := Some (FitInHole.stepSolver problem)
+                penalty := Some (Penalty.figurePenalty problem)
             ) problem (fun _ -> Id)
 
     // adds a new figure based on the current figure, if the current figure
@@ -163,6 +166,7 @@ module MVU =
             | _ -> figure
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
+        let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -245,7 +249,9 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {FitInHole.figurePenalty state.Problem shownFigure}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {match !penalty with
+                                                                        | None -> nan
+                                                                        | Some p -> p shownFigure}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
@@ -267,12 +273,16 @@ module MVU =
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
-                                let crossesHolePath = Geometry.segmentIntersectionList (sc, tc) holeSegments <> []
+                                let outsideHolePenalty = segmentOutsideHole (sc, tc)
+                                let color =
+                                    if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
+                                    else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
+                                    else "#00FF00"
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)
                                     Line.strokeThickness 2.0
-                                    Line.stroke (if crossesHolePath then "#e74c3c" else "#00FF00")
+                                    Line.stroke color
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         ) @

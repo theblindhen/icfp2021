@@ -14,24 +14,21 @@ let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Mode
         square (max 0 (xy.Y - maxCorner.Y)))
     |> float
 
-let figurePenalty (problem: Model.Problem) =
-    let outsideHolePenalty = Penalty.outsideHolePenalty problem
-    fun figure ->
-        Penalty.penaltyEdgeLengthSqSum problem figure +
-        outsideHolePenalty figure
-
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
     let getNeighbor = Neighbors.balancedCollectionOfNeighbors
-    let penalty = figurePenalty problem
-    let outsideHolePenalty = Penalty.outsideHolePenalty problem
-    let step = SimulatedAnnealing.simpleSimulatedAnnealing penalty getNeighbor 100_000 rnd ()
+    let penalties = Penalty.figurePenalties problem
+    let penaltySum fig = List.sum (penalties fig)
+    let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 rnd ()
     fun figure ->
         let result = Option.defaultValue figure (step figure)
         // TODO: this is just debug printing
-        printfn "penalty = %f + %f"
-            (Penalty.penaltyEdgeLengthSqSum problem result)
-            (outsideHolePenalty result)
+        let resPenalties = penalties result
+        let spenalties =
+            resPenalties
+            |> List.map (fun p -> sprintf "%.2f" p) 
+            |> String.concat " + "
+        printfn $"penalty = {spenalties} = {List.sum(resPenalties)}"
         result
 
 let solve (problemPath: string) (problemNo: int) =
