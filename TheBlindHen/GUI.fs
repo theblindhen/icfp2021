@@ -10,7 +10,7 @@ let problemGlobalVar: Model.Problem option ref = ref None
 
 // The stepper can't be part of the state since the state has to be equatable in
 // Avalonia FuncUI.
-let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
+let stepperGlobalVar: ((Model.Figure * float) -> (Model.Figure * float)) option ref = ref None
 
 let solutionPath: string option ref = ref None
 
@@ -23,7 +23,23 @@ let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
         Array.tryFindIndex (fun c -> c = nearestPoint) figure.Vertices
     else None
 
-let penalty: (Model.Figure -> float) option ref = ref None
+let stepSolverWithStopAndDebug problem =
+    let stepSolver = FitInHole.stepSolver problem
+    let penalties = Penalty.figurePenalties problem
+    fun (figure, figurePenalty) ->
+        if figurePenalty = 0.0 then
+            printfn "Reached score 0 and will not advance"
+            (figure, figurePenalty)
+        else
+            let resultOpt, penalty = stepSolver figure
+            let result = Option.defaultValue figure resultOpt
+            let resPenalties = penalties result
+            let spenalties =
+                resPenalties
+                |> List.map (fun p -> sprintf "%.2f" p) 
+                |> String.concat " + "
+            printfn $"penalty = {spenalties} = {List.sum(resPenalties)}"
+            (result, penalty)
 
 module MVU =
     open Elmish
@@ -37,7 +53,7 @@ module MVU =
 
     type State = {
         Problem: Model.Problem
-        History: ResizeArray<Model.Figure>
+        History: ResizeArray<Model.Figure * float>
         Index: int // position in History
         Scale: float
         Origo: Model.Coord
@@ -57,7 +73,7 @@ module MVU =
         let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
         {
             Problem = problem
-            History = ResizeArray([problem.Figure])
+            History = ResizeArray([problem.Figure, infinity])
             Index = 0
             Scale = 0.9 * WINDOWSIZE / float (max maxCoord.X maxCoord.Y)
             Selection = []
@@ -66,16 +82,15 @@ module MVU =
             Origo = Model.Coord (0, 0)
         },
         Cmd.OfFunc.attempt (fun problem ->
-                stepperGlobalVar := Some (FitInHole.stepSolver problem)
-                penalty := Some (Penalty.figurePenalty problem)
+                stepperGlobalVar := Some (stepSolverWithStopAndDebug problem)
             ) problem (fun _ -> Id)
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
     let applyIfLast (f: Model.Figure -> Model.Figure) (state: State): State =
         if state.Index = state.History.Count - 1 then
-            let newFig = f state.History.[state.Index]
-            state.History.Add (newFig)
+            let newFig = f (fst state.History.[state.Index])
+            state.History.Add (newFig, infinity)
             { state with Index = state.Index + 1 }
         else state
 
@@ -84,6 +99,7 @@ module MVU =
         match msg with
         | Id -> state, Cmd.none
         | Forward steps ->
+            let (_, curScore) = state.History.[state.History.Count - 1]
             let newIndex = state.Index + steps
             let stepper = Option.get !stepperGlobalVar
             while newIndex >= state.History.Count do
@@ -108,13 +124,13 @@ module MVU =
                         let solutionFile = sprintf "%s%6d" path postfix
                         Directory.CreateDirectory path |> ignore
                         printfn "Wrote solution to %s" solutionFile
-                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
+                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(fst s.History.[s.Index]))))
                 state
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
         | Select p ->
-            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
+            let selectedCoordIndex = findNearbyCoord (pointToCoord p) (fst state.History.[state.Index])
             match selectedCoordIndex with
             | None -> state, Cmd.none
             | Some index ->
@@ -123,7 +139,7 @@ module MVU =
                 else
                     { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
         | SelectAll ->
-            { state with Selection = Array.mapi (fun i _ -> i) state.History.[state.Index].Vertices |> List.ofSeq }, Cmd.none
+            { state with Selection = Array.mapi (fun i _ -> i) (fst state.History.[state.Index]).Vertices |> List.ofSeq }, Cmd.none
         | DeselectAll ->
             { state with Selection = [] }, Cmd.none
         | CanvasPressed p ->
@@ -154,7 +170,7 @@ module MVU =
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
-        let figure = state.History.[state.Index]
+        let (figure, penalty) = state.History.[state.Index]
         let shownFigure =
             match state.Tool, state.InProgress with
             | Move, Some ((x1, y1), (x2, y2)) ->
@@ -249,9 +265,7 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {match !penalty with
-                                                                        | None -> nan
-                                                                        | Some p -> p shownFigure}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {penalty}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
@@ -369,8 +383,6 @@ type App() =
 let showGui (problemPath: string) (problemNo: int) =
         let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
         printfn "%A" problem
-        let solution = Model.solutionOfFigure problem.Figure
-        printfn $"Solution:\n{Model.deparseSolution solution}"
 
         problemGlobalVar := Some problem 
         solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")

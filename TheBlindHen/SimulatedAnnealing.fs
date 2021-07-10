@@ -17,20 +17,20 @@ let generalSimulatedAnnealing
         // TODO: in this way, we end up calling the energy function on the same
         // state many times. Only return something if the state changed.
         fun state ->
+            let e = energyFunction state
             if !i < iterations then
                 i := !i + 1
                 let temperature = temperatureSchedule (float !i / float iterations)
                 let state' = getRandomNeighbor rnd state
-                let e = energyFunction state
                 let e' = energyFunction state'
                 if e' <= 0.0 then
-                    None
+                    (Some state', e') // solution found
                 else if acceptanceFunction e e' temperature >= rnd.NextDouble() then
-                    Some state'
+                    (Some state', e') // step to next state
                 else
-                    Some state
+                    (Some state, e) // stay in previous state
             else
-                None
+                (None, e) // no more iterations
 
 let acceptanceFunctionSimple e e' temperature =
     if e' < e then

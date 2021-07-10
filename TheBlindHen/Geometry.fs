@@ -7,6 +7,9 @@ exception Exception of string
 /// Line segment
 type Segment = Coord * Coord
 
+let stringOfSegment (c1: Coord, c2: Coord) =
+    $"({c1})--({c2})"
+
 type Vector = 
     struct 
         val X: float
@@ -17,7 +20,7 @@ type Vector =
             sqrt(this.X*this.X + this.Y*this.Y)
     end
 
-let EPSILON = 0.001
+let EPSILON = 0.00001
 let isZero (x: float) = abs (x) < EPSILON
 let isOne (x: float) = isZero (x - 1.0)
 
