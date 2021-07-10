@@ -135,3 +135,4 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : SegmentI
     |> List.sortBy (fun ints ->
         match ints with
         | Point a -> a
+        | Overlap (a,b) -> a)
