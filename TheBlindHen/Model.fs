@@ -64,17 +64,11 @@ let solutionOfFigure (f: Figure): Solution =
         SolutionVertices = f.Vertices
     }
 
-let copyFigure (f: Figure): Figure =
-    {
-        Edges = Array.copy f.Edges
-        Vertices = Array.copy f.Vertices
-    }
-
 let mapFigureVerticies (f : Coord -> Coord) (fig: Figure): Figure =
-    {
-        Edges = Array.copy fig.Edges
-        Vertices = Array.map f fig.Vertices
-    }
+    { fig with Vertices = Array.map f fig.Vertices }
+
+let copyFigureVerticies (fig: Figure): Figure =
+    { fig with Vertices = Array.copy fig.Vertices }
 
 let copySolution (s: Solution): Solution =
     {
@@ -119,10 +113,10 @@ let figureSegments (fig: Figure) =
 
 /// Returns (smallest, largest)
 let holeBoundingBox (problem: Problem) =
-    let xs = problem.Hole |> Array.toList |> List.map (fun c -> c.X)
-    let ys = problem.Hole |> Array.toList |> List.map (fun c -> c.Y)
-    let minx = xs |> List.min
-    let miny = ys |> List.min
-    let maxx = xs |> List.max
-    let maxy = ys |> List.max
+    let xs = problem.Hole |> Array.map (fun c -> c.X)
+    let ys = problem.Hole |> Array.map (fun c -> c.Y)
+    let minx = xs |> Array.min
+    let miny = ys |> Array.min
+    let maxx = xs |> Array.max
+    let maxy = ys |> Array.max
     (Coord (minx, miny), Coord (maxx, maxy))
