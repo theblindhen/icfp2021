@@ -10,6 +10,10 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
+let solutionPath: string option ref = ref None
+
+let rnd = Random(int(DateTime.Now.Ticks))
+
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
     figure.Vertices
     |> Array.sumBy (fun xy ->
@@ -39,9 +43,9 @@ let stepSolver (problem: Model.Problem) =
             (holeBBPenalty bb result)
         result
 
-let findNearbyCoord x y (figure: Model.Figure) =
+let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
-        let dx, dy = abs (coord.X - x), abs (coord.Y - y)
+        let dx, dy = abs (coord.X - c.X), abs (coord.Y - c.Y)
         dx+dy
     let nearestPoint = Array.minBy dist figure.Vertices
     if dist nearestPoint < 5 then
@@ -54,33 +58,37 @@ module MVU =
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
-    open Avalonia.Layout
-    open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
-    type Tool = Select | Deselect | Move | Rotate
+    type Tool = Move | Rotate
 
     type State = {
         Problem: Model.Problem
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
-        SelectedCoords: int list
-        MoveFrom: (int * int) option
+        Selection: int list
         Tool: Tool
+        InProgress: ((int * int) * (int * int)) option
     }
 
-    type Msg = Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+    type Msg =
+        | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
+        | Select of Avalonia.Point
+        | Deselect of Avalonia.Point
+        | CanvasPressed of Avalonia.Point
+        | CanvasReleased of Avalonia.Point
+        | CanvasMoved of Avalonia.Point
 
-    let init (problem: Model.Problem): State * Cmd<Msg>=
+    let init (problem: Model.Problem): State * Cmd<Msg> =
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
             Index = 0
             Scale = 2.0
-            SelectedCoords = []
-            MoveFrom = None
-            Tool = Select
+            Selection = []
+            Tool = Move
+            InProgress = None
         }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
@@ -93,6 +101,7 @@ module MVU =
         else state
 
     let update (msg: Msg) (state: State): (State * Cmd<Msg>) =
+        let pointToCoord (p: Avalonia.Point) = Model.Coord (int(p.X / state.Scale), int(p.Y / state.Scale))
         match msg with
         | Id -> state, Cmd.none
         | Forward steps ->
@@ -107,45 +116,74 @@ module MVU =
         | Save ->
             state,
             Cmd.OfFunc.attempt
-                (fun s -> File.WriteAllText("solution", Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
+                (fun s ->
+                    match !solutionPath with
+                    | None -> ()
+                    | Some path ->
+                        let postfix = rnd.Next(999999)
+                        let solutionFile = sprintf "%s%6d" path postfix
+                        Directory.CreateDirectory path |> ignore
+                        printfn "Wrote solution to %s" solutionFile
+                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
                 state
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
+        | Select p ->
+            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
+            match selectedCoordIndex with
+            | None -> state, Cmd.none
+            | Some index -> { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
+        | Deselect p ->
+            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
+            match selectedCoordIndex with
+            | None -> state, Cmd.none
+            | Some index -> { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-            match state.Tool with
-            | Select ->
-                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-                match selectedCoordIndex with
-                | None -> state, Cmd.none
-                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
-            | Deselect ->
-                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-                match selectedCoordIndex with
-                | None -> state, Cmd.none
-                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
-            | Move ->
-                { state with MoveFrom = Some (x, y) }, Cmd.none
-            | Rotate ->
-                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state, Cmd.none
+            { state with InProgress = Some ((x, y), (x, y)) }, Cmd.none
+        | CanvasMoved p ->
+            match state.InProgress with
+            | Some ((x1, y1), _) ->
+                let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
+                { state with InProgress = Some ((x1, y1), (x2, y2)) }, Cmd.none
+            | _ -> state, Cmd.none
         | CanvasReleased p ->
-            match state.Tool, state.MoveFrom with
-            | Move, Some (x1, y1) ->
+            match state.Tool, state.InProgress with
+            | Move, Some ((x1, y1), _) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
-                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state, Cmd.none
+                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy)) state
+                { translatedState with InProgress = None }, Cmd.none
+            | Rotate, Some ((x1, y1), _) ->
+                let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAround state.Selection (x1, y1)) state
+                { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
-        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }, Cmd.none
+        | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
+        let figure = state.History.[state.Index]
+        let vs =
+            match state.Tool, state.InProgress with
+            | Move, Some ((x1, y1), (x2, y2)) ->
+                let (dx, dy) = (x2 - x1, y2 - y1)
+                (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+            | _ -> figure.Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
-                    UniformGrid.columns 2
+                    UniformGrid.columns 6
                     UniformGrid.children [
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 100))
+                            Button.content "<<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 10))
+                            Button.content "<<"
+                        ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Backward 1))
                             Button.content "<"
@@ -155,28 +193,26 @@ module MVU =
                             Button.content ">"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 10))
-                            Button.content "<<"
-                        ]
-                        Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 10))
                             Button.content ">>"
-                        ]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 100))
-                            Button.content "<<<"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 100))
                             Button.content ">>>"
                         ]
+                    ]
+                ]
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomOut)
-                            Button.content "-"
+                            Button.content "Zoom out"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomIn)
-                            Button.content "+"
+                            Button.content "Zoom in"
                         ]
                         Button.create [
                             Button.dock Dock.Bottom
@@ -194,16 +230,6 @@ module MVU =
                     UniformGrid.dock Dock.Bottom
                     UniformGrid.columns 4
                     UniformGrid.children [
-                        RadioButton.create [
-                            RadioButton.content "Select"
-                            RadioButton.isChecked (state.Tool == Select)
-                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Select))
-                        ]
-                        RadioButton.create [
-                            RadioButton.content "Deselect"
-                            RadioButton.isChecked (state.Tool == Deselect)
-                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Deselect))
-                        ]
                         RadioButton.create [
                             RadioButton.content "Move"
                             RadioButton.isChecked (state.Tool == Move)
@@ -224,14 +250,20 @@ module MVU =
                     Canvas.background "#2c3e50"
                     Canvas.onPointerPressed (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
-                            dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
+                            let shift = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Shift)
+                            let ctrl = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Control)
+                            let position = evt.GetPosition null
+                            match shift, ctrl with
+                            | true, false -> dispatch (Select position)
+                            | false, true -> dispatch (Deselect position)
+                            | _ -> dispatch (CanvasPressed position))
+                    Canvas.onPointerMoved (fun evt ->
+                            dispatch (CanvasMoved (evt.GetPosition null)))
                     Canvas.onPointerReleased (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
-                            dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
+                            dispatch (CanvasReleased (evt.GetPosition null)))
                     Canvas.children (
                         (
-                            let figure = state.History.[state.Index]
-                            let vs = figure.Vertices
                             figure.Edges
                             |> Array.toList
                             |> List.map (fun (s,t) ->
@@ -244,9 +276,7 @@ module MVU =
                             )
                         ) @
                         (
-                            let figure = state.History.[state.Index]
-                            let vs = figure.Vertices
-                            state.SelectedCoords
+                            state.Selection
                             |> List.map (fun i ->
                                 let c = vs.[i]
                                 Ellipse.create [
@@ -276,7 +306,6 @@ module MVU =
 open Elmish
 open Avalonia
 open Avalonia.Controls.ApplicationLifetimes
-open Avalonia.Input
 open Avalonia.FuncUI
 open Avalonia.FuncUI.Elmish
 open Avalonia.FuncUI.Components.Hosts
@@ -310,14 +339,15 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui inputFile =
-        let problem = Model.parseFile inputFile
+let showGui (problemPath: string) (problemNo: int) =
+        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
         printfn "%A" problem
         let solution = Model.solutionOfFigure problem.Figure
         printfn $"Solution:\n{Model.deparseSolution solution}"
 
         problemGlobalVar := Some problem 
         stepperGlobalVar := Some (stepSolver problem)
+        solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
