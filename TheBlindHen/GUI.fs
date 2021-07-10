@@ -10,6 +10,10 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
+let solutionPath: string option ref = ref None
+
+let rnd = Random(int(DateTime.Now.Ticks))
+
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
     figure.Vertices
     |> Array.sumBy (fun xy ->
@@ -107,7 +111,15 @@ module MVU =
         | Save ->
             state,
             Cmd.OfFunc.attempt
-                (fun s -> File.WriteAllText("solution", Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
+                (fun s ->
+                    match !solutionPath with
+                    | None -> ()
+                    | Some path ->
+                        let postfix = rnd.Next(999999)
+                        let solutionFile = sprintf "%s%6d" path postfix
+                        Directory.CreateDirectory path |> ignore
+                        printfn "Wrote solution to %s" solutionFile
+                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
                 state
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
@@ -310,14 +322,15 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui inputFile =
-        let problem = Model.parseFile inputFile
+let showGui (problemPath: string) (problemNo: int) =
+        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
         printfn "%A" problem
         let solution = Model.solutionOfFigure problem.Figure
         printfn $"Solution:\n{Model.deparseSolution solution}"
 
         problemGlobalVar := Some problem 
         stepperGlobalVar := Some (stepSolver problem)
+        solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
