@@ -116,3 +116,13 @@ let figureSegments (fig: Figure) =
     fig.Edges
     |> Array.toList
     |> List.map (fun (v1, v2) -> (fig.Vertices.[v1], fig.Vertices.[v2]))
+
+/// Returns (smallest, largest)
+let holeBoundingBox (problem: Problem) =
+    let xs = problem.Hole |> Array.toList |> List.map (fun c -> c.X)
+    let ys = problem.Hole |> Array.toList |> List.map (fun c -> c.Y)
+    let minx = xs |> List.min
+    let miny = ys |> List.min
+    let maxx = xs |> List.max
+    let maxy = ys |> List.max
+    (Coord (minx, miny), Coord (maxx, maxy))
