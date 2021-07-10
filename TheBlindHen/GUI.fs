@@ -156,8 +156,16 @@ module MVU =
             DockPanel.children [
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
-                    UniformGrid.columns 2
+                    UniformGrid.columns 6
                     UniformGrid.children [
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 100))
+                            Button.content "<<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 10))
+                            Button.content "<<"
+                        ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Backward 1))
                             Button.content "<"
@@ -167,28 +175,26 @@ module MVU =
                             Button.content ">"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 10))
-                            Button.content "<<"
-                        ]
-                        Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 10))
                             Button.content ">>"
-                        ]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 100))
-                            Button.content "<<<"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 100))
                             Button.content ">>>"
                         ]
+                    ]
+                ]
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomOut)
-                            Button.content "-"
+                            Button.content "Zoom out"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomIn)
-                            Button.content "+"
+                            Button.content "Zoom in"
                         ]
                         Button.create [
                             Button.dock Dock.Bottom
