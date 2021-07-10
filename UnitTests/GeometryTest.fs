@@ -609,3 +609,45 @@ type GeometryDecomposeTestClass () =
                 DecPoint (2.0/3.0, Cross)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon5)
+
+[<TestClass>]
+type GeometryGraphTestClass () =
+
+    // Helpers
+    let seg (x1,y1) (x2,y2) = (Coord (x1,y1), Coord (x2,y2))
+
+    [<TestMethod>]
+    member this.TestArticulationPoints1 () =
+        let dummy = Coord (0,0)
+        let figure : Figure = 
+            {
+                Edges = [| (0,5); (0,1); (1,2); (1,3); (2,3); (3,4); (2,4) |]
+                Vertices = Array.create 6 dummy
+            }
+        let expected = [ (0,true); (1,true); (2,false); (3,false); (4,false); (5,false)]
+        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..5])
+
+    [<TestMethod>]
+    member this.TestArticulationPoints2 () =
+        let dummy = Coord (0,0)
+        let figure : Figure = 
+            {
+                Edges = [| (0,5); (0,1); (5,2); (1,2); (1,3); (2,3); (3,4); (2,4) |]
+                Vertices = Array.create 6 dummy
+            }
+        let expected = [ (0,false); (1,false); (2,false); (3,false); (4,false); (5,false)]
+        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..5])
+
+    [<TestMethod>]
+    member this.TestArticulationPoints3 () =
+        let dummy = Coord (0,0)
+        let figure : Figure = 
+            {
+                Edges = [| (0,1); (0,2); (1,3); (2,3); (3,4); (3,5); (4,6); (5,6) |]
+                Vertices = Array.create 7 dummy
+            }
+        let expected = [ (0,false); (1,false); (2,false); (3,true); (4,false); (5,false); (6,false)]
+        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..6])
