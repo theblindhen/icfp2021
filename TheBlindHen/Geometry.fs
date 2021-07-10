@@ -17,7 +17,7 @@ type Vector =
             sqrt(this.X*this.X + this.Y*this.Y)
     end
 
-let EPSILON = 0.001
+let EPSILON = 0.00001
 let isZero (x: float) = abs (x) < EPSILON
 let isOne (x: float) = isZero (x - 1.0)
 

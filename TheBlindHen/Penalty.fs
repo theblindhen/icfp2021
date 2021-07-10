@@ -66,26 +66,45 @@ let isCoordInsideHole holeSegments =
     memoize (fun coord ->
         let segment = (Coord (-1,-1), coord)
         let decoms = segmentDecomposition segment holeSegments
-        let (=~) x y = abs (x - y) < EPSILON
         let rec iter isInside =
             function
             | DecPoint (a, typ) :: decomTl ->
-                if a =~ 1. then
+                if isOne a then
                     true
                 else
                     iter (if typ = Cross then not isInside else isInside) decomTl
             | DecOverlap (_,b) :: decomTl ->
-                if b =~ 1. then
+                if isOne b then
                     true
                 else
                     iter isInside decomTl
             | [] -> isInside
         iter false decoms)
 
+let segmentStartsInside holeSegments =
+    memoize (fun (sStart: Coord, sEnd: Coord) ->
+        let extSeg = (Coord (sStart.X - 1000 * (sEnd.X - sStart.X), 
+                             sStart.Y - 1000 * (sEnd.Y - sStart.Y)),
+                      sStart)
+        let decoms = segmentDecomposition extSeg holeSegments
+        let rec iter isInside =
+            function
+            | DecPoint (a, typ) :: decomTl ->
+                if isOne a then
+                    isInside
+                else
+                    iter (if typ = Cross then not isInside else isInside) decomTl
+            | DecOverlap (_,b) :: decomTl ->
+                iter isInside decomTl
+            | [] -> isInside
+        iter false decoms)
+
 /// returns the ratio of the sement that is outside the hole
 let segmentOutsideHole holeSegments =
-    memoize (fun (a,b) ->
-        let decoms = segmentDecomposition (a,b) holeSegments
+    // memoize (fun seg ->
+    (fun seg ->
+        let decoms = segmentDecomposition seg holeSegments
+        printfn $"{decoms}"
         let rec iter (isInside, acc, lastCross) =
             function
             | DecPoint (a, Cross) :: decomTl -> 
@@ -98,7 +117,7 @@ let segmentOutsideHole holeSegments =
                 let lastUpd = b
                 iter (isInside, accUpd, lastUpd) decomTl            
             | [] -> if isInside then acc else acc + 1.0 - lastCross
-        iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
+        iter (segmentStartsInside holeSegments seg, 0.0, 0.0) decoms
         )
 
 let penaltyEdgeRatioOutside (problem: Problem) =
