@@ -27,8 +27,8 @@ let rotateSelectedVerticiesByAngle (selection: int list) (angle: float)  =
         let y' = int(float(c.Y) * Math.Cos(rad) + float(c.X) * Math.Sin(rad))
         Model.Coord(x', y'))
 
-let rotateVerticiesAround (ox, oy : int) =
-    translateVerticies (-ox, -oy) >> rotateVerticies >> translateVerticies (ox, oy)
+let rotateVerticiesAround (origo: Model.Coord) =
+    translateVerticies (-origo.X, -origo.Y) >> rotateVerticies >> translateVerticies (origo.X, origo.Y)
 
 let rotateSelectedVerticiesAround (selection: int list) (origo: Model.Coord) =
     translateSelectedVerticies selection (-origo.X, -origo.Y)
