@@ -33,3 +33,17 @@ let stepSolver (problem: Model.Problem) =
             (Penalty.penaltyEdgeLengthSqSum problem result)
             (outsideHolePenalty result)
         result
+
+let solve (problemPath: string) (problemNo: int) =
+    let problem = Model.parseFile $"{problemPath}/{problemNo}.problem" // TODO: call from GUI
+    //let solutionPath = Some ($"{problemPath}/{problemNo}-solutions/")
+    let stepper = stepSolver problem
+    let outsideHolePenalty = Penalty.outsideHolePenalty problem // TODO: repeat
+    let rec run i figure =
+        if i = 100_000 then
+            ()
+        else
+            let figure = stepper figure
+            printfn "%7d %f" i (outsideHolePenalty figure)
+            run (i + 1) figure
+    run 0 problem.Figure

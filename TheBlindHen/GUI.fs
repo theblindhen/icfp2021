@@ -359,8 +359,6 @@ type App() =
 let showGui (problemPath: string) (problemNo: int) =
         let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
         printfn "%A" problem
-        let solution = Model.solutionOfFigure problem.Figure
-        printfn $"Solution:\n{Model.deparseSolution solution}"
 
         problemGlobalVar := Some problem 
         solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
