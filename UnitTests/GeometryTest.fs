@@ -262,8 +262,8 @@ type GeometryDecomposeTestClass () =
         let simplePolygon =
             [
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
+                seg (0,0) (0,1)
                 seg (0,1) (0,0)
             ]
         let expected =
@@ -274,13 +274,45 @@ type GeometryDecomposeTestClass () =
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap2 () =
+        let s1 = seg (0,0) (4,0)
+        let simplePolygon =
+            [
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
+                seg (1,1) (1,0)
+                seg (1,0) (0,0)
+            ]
+        let expected =
+            [
+                Overlap (0.0, 0.25)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeOverlap3 () =
         let s1 = seg (-1,0) (4,0)
         let simplePolygon =
             [
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
+                seg (0,0) (0,1)
                 seg (0,1) (0,0)
+            ]
+        let expected =
+            [
+                Overlap (0.2, 0.4)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeOverlap4 () =
+        let s1 = seg (-1,0) (4,0)
+        let simplePolygon =
+            [
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
+                seg (1,1) (1,0)
+                seg (1,0) (0,0)
             ]
         let expected =
             [
@@ -294,8 +326,8 @@ type GeometryDecomposeTestClass () =
         let simplePolygon =
             [
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
+                seg (0,0) (0,1)
                 seg (0,1) (0,0)
             ]
         let expected =
@@ -307,13 +339,13 @@ type GeometryDecomposeTestClass () =
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint2 () =
-        let s1 = seg (-1,2) (4,-3)
+        let s1 = seg (-1,-1) (4,4)
         let simplePolygon =
             [
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
-                seg (0,1) (0,0)
             ]
         let expected =
             [
@@ -327,10 +359,27 @@ type GeometryDecomposeTestClass () =
         let s1 = seg (-1,2) (4,-3)
         let simplePolygon =
             [
-                seg (0,0) (0,1) 
                 seg (1,1) (1,0)
-                seg (0,0) (1,0) 
-                seg (1,1) (0,1)
+                seg (1,0) (0,0)
+                seg (0,0) (0,1)
+                seg (0,1) (0,0)
+            ]
+        let expected =
+            [
+                CrossPoint (0.2)
+                CrossPoint (0.4)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeCrossPoint4 () =
+        let s1 = seg (-1,2) (4,-3)
+        let simplePolygon =
+            [
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
+                seg (1,1) (1,0)
+                seg (1,0) (0,0)
             ]
         let expected =
             [
@@ -345,8 +394,8 @@ type GeometryDecomposeTestClass () =
         let simplePolygon =
             [
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
+                seg (0,0) (0,1)
                 seg (0,1) (0,0)
             ]
         let expected =
@@ -360,10 +409,10 @@ type GeometryDecomposeTestClass () =
         let s1 = seg (-1,1) (4,-4)
         let simplePolygon =
             [
-                seg (0,0) (0,1) 
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
                 seg (1,1) (1,0)
-                seg (0,0) (1,0) 
-                seg (1,1) (0,1)
+                seg (1,0) (0,0)
             ]
         let expected =
             [
@@ -377,8 +426,8 @@ type GeometryDecomposeTestClass () =
         let simplePolygon =
             [
                 seg (1,1) (1,0)
-                seg (1,1) (0,1)
                 seg (1,0) (0,0)
+                seg (0,0) (0,1)
                 seg (0,1) (0,0)
             ]
         let expected =
@@ -392,10 +441,10 @@ type GeometryDecomposeTestClass () =
         let s1 = seg (-1,0) (4,5)
         let simplePolygon =
             [
-                seg (0,0) (0,1) 
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
                 seg (1,1) (1,0)
-                seg (0,0) (1,0) 
-                seg (1,1) (0,1)
+                seg (1,0) (0,0)
             ]
         let expected =
             [
