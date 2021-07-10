@@ -2,6 +2,8 @@ module GUI
 
 open System
 
+let WINDOWSIZE = 1200.0
+
 // We haven't found a good way to pass arguments through App, so we use a global
 // var here.
 let problemGlobalVar: Model.Problem option ref = ref None
@@ -81,11 +83,12 @@ module MVU =
         | CanvasMoved of Avalonia.Point
 
     let init (problem: Model.Problem): State * Cmd<Msg> =
+        let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
             Index = 0
-            Scale = 2.0
+            Scale = 0.9 * WINDOWSIZE / float (max maxCoord.X maxCoord.Y)
             Selection = []
             Tool = Move
             InProgress = None
@@ -347,8 +350,8 @@ type MainWindow() as this =
     inherit HostWindow()
     do
         base.Title <- "TestUI"
-        base.Width <- 400.0
-        base.Height <- 400.0
+        base.Width <- WINDOWSIZE
+        base.Height <- WINDOWSIZE
         
         //this.VisualRoot.VisualRoot.Renderer.DrawFps <- true
         //this.VisualRoot.VisualRoot.Renderer.DrawDirtyRects <- true
