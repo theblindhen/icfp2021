@@ -136,28 +136,35 @@ type Decomposition =
 /// a segment's end point is always the next segment's starting point 
 let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
     // Get the ordered list of intersections
-    // Pass over intersections and remove the Points that are adjacent to Overlaps
+    // Pass over intersections and remove the Points that are adjacent to
+    // Overlaps
+    let overlapAdjacent point overlap =
+        match point, overlap with
+        | Point (a, _), Overlap (b1, b2) ->
+            abs (a - b1) < EPSILON || abs (a - b2) < EPSILON
+        | _ -> false
+    let intersections = segmentIntersectionList seg simplePolygon
     let intersections = 
-        segmentIntersectionList seg simplePolygon
-        |> (List.fold (fun acc ints ->
+        List.fold (fun acc ints ->
             match (acc, ints) with
-            | Point (a, _)::tl, Overlap (b, _) ->
-                if abs (a - b) < EPSILON then
+            | (Point _ as pnt)::tl, Overlap _ ->
+                if overlapAdjacent pnt ints then
                     ints :: tl // Skip Point
                 else
                     ints :: acc // Keep Point
-            | Overlap (a1,a2)::_, Point (b, _) ->
-                if abs (a1 - b) < EPSILON then
+            | (Overlap _ as ovl)::_, Point _ ->
+                if overlapAdjacent ints ovl then
                     acc // Skip Point
                 else
                     ints :: acc // Keep Point
             | _ -> ints :: acc // Keep Point
-            ) [])
+            ) [] intersections
+        |> List.rev
     // Special case: Last is Overlap first is adjacent Point
     let intersections = 
         match intersections, intersections.[intersections.Length - 1] with
-        | Point (a,_)::tl, Overlap (b,_) ->
-            if abs (a - b) < EPSILON then
+        | (Point _ as pnt)::tl, (Overlap _ as ovl) ->
+            if overlapAdjacent pnt ovl then
                 tl
             else
                 intersections
@@ -171,7 +178,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
                 CrossPoint(a)
             else
                 TouchPoint(a)
-        let (decompositions, olastPnt) = 
+        let (decompositions_rev, olastPnt) = 
             List.fold (fun (acc, last) cur ->
                 match (last, cur) with
                 | Some (a,adir), Point (b,bdir) ->
@@ -186,6 +193,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
                 | None, Overlap (b1, b2) ->
                     (Aligned (b1,b2) :: acc, None)
                 ) ([], None) intersections
+        let decompositions = List.rev decompositions_rev
         // Special case: Last and first is Point 
         match olastPnt, intersections, decompositions with
         | Some (a, adir), Point (b, bdir)::_, _::tldecomps ->

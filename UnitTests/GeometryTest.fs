@@ -332,7 +332,7 @@ type GeometryDecomposeTestClass () =
             ]
         let expected =
             [
-                Overlap (1.0/3.0, 2.0/3.0)
+                Aligned (1.0/3.0, 2.0/3.0)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
  
@@ -348,7 +348,7 @@ type GeometryDecomposeTestClass () =
             ]
         let expected =
             [
-                Overlap (1.0/3.0, 2.0/3.0)
+                Aligned (1.0/3.0, 2.0/3.0)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
 
@@ -368,8 +368,8 @@ type GeometryDecomposeTestClass () =
             ]
         let expected =
             [
-                Overlap (0.2, 0.4)
-                Overlap (0.6, 0.8)
+                Aligned (0.2, 0.4)
+                Aligned (0.6, 0.8)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
 
@@ -389,8 +389,8 @@ type GeometryDecomposeTestClass () =
             ]
         let expected =
             [
-                Overlap (0.2, 0.4)
-                Overlap (0.6, 0.8)
+                Aligned (0.2, 0.4)
+                Aligned (0.6, 0.8)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
 
