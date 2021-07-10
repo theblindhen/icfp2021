@@ -109,8 +109,8 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
         else
             None
 
-let segmentDecomposition (seg: Segment) (problem: Problem) : SegmentIntersect list =
-    holeSegments problem
+let segmentDecomposition (seg: Segment) (polygon: Segment list) : SegmentIntersect list =
+    polygon
     |> List.choose (segmentsIntersect seg)
     |> List.map (fun ints ->
         match ints with
