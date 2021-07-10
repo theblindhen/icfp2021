@@ -14,8 +14,7 @@ let translateRandomCoord (rnd: System.Random) (figure: Figure) =
     newFigure
 
 let translateFullFigureRandomly (rnd: System.Random) (figure: Figure) =
-    let choices = [| (1, 0); (0, 1); (-1, 0); (0, -1) |]
-    let delta = choices.[rnd.Next(choices.Length)]
+    let delta = directions.[rnd.Next(directions.Length)]
     Transformations.translateVerticies delta figure
 
 let weightedChoice (choices: (float * (System.Random -> 'a -> 'b)) list) (rnd: System.Random) (param: 'a) : 'b =

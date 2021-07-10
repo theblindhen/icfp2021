@@ -2,7 +2,7 @@ module GUI
 
 open System
 
-let WINDOWSIZE = 1200.0
+let WINDOWSIZE = 800.0
 
 // We haven't found a good way to pass arguments through App, so we use a global
 // var here.
@@ -17,14 +17,14 @@ let solutionPath: string option ref = ref None
 let rnd = Random(int(DateTime.Now.Ticks))
 
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
+    let square x = x * x
     figure.Vertices
     |> Array.sumBy (fun xy ->
-        max 0 (minCorner.X - xy.X) +
-        max 0 (xy.X - maxCorner.X) +
-        max 0 (minCorner.Y - xy.Y) +
-        max 0 (xy.Y - maxCorner.Y))
+        square (max 0 (minCorner.X - xy.X)) +
+        square (max 0 (xy.X - maxCorner.X)) +
+        square (max 0 (minCorner.Y - xy.Y)) +
+        square (max 0 (xy.Y - maxCorner.Y)))
     |> float
-    |> ( * ) 1000.0
 
 let figurePenalty (problem: Model.Problem) =
     let bb = Model.holeBoundingBox problem
@@ -34,11 +34,12 @@ let figurePenalty (problem: Model.Problem) =
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let getNeighbor = Neighbors.balancedCollectionOfNeighbors rnd
+    let getNeighbor = Neighbors.balancedCollectionOfNeighbors
     let penalty = figurePenalty problem
     let bb = Model.holeBoundingBox problem
+    let step = SimulatedAnnealing.simpleSimulatedAnnealing penalty getNeighbor 100_000 rnd ()
     fun figure ->
-        let result = Hillclimber.step getNeighbor penalty figure
+        let result = Option.defaultValue figure (step figure)
         // TODO: this is just debug printing
         printfn "penalty = %f + %f"
             (Penalty.penaltyEdgeLengthSqSum problem result)
@@ -93,7 +94,8 @@ module MVU =
             Tool = Move
             InProgress = None
             Origo = Model.Coord (0, 0)
-        }, Cmd.none
+        },
+        Cmd.OfFunc.attempt (fun problem -> stepperGlobalVar := Some (stepSolver problem)) problem (fun _ -> Id)
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
@@ -113,10 +115,14 @@ module MVU =
             let stepper = Option.get !stepperGlobalVar
             while newIndex >= state.History.Count do
                 let lastState = state.History.[state.History.Count - 1]
-                state.History.Add (stepper lastState)
+                let rec repeatFn i f x =
+                    match i with
+                    | 0 -> x
+                    | n -> repeatFn (n - 1) f (f x)
+                state.History.Add (repeatFn 10 stepper lastState)
             { state with Index = newIndex }, Cmd.none
         | Backward steps -> { state with Index = max 0 (state.Index - steps) }, Cmd.none
-        | Reset -> { state with Index = 0 }, Cmd.none
+        | Reset -> init state.Problem
         | Save ->
             state,
             Cmd.OfFunc.attempt
@@ -383,7 +389,6 @@ let showGui (problemPath: string) (problemNo: int) =
         printfn $"Solution:\n{Model.deparseSolution solution}"
 
         problemGlobalVar := Some problem 
-        stepperGlobalVar := Some (stepSolver problem)
         solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
         AppBuilder
             .Configure<App>()

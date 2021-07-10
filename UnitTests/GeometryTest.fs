@@ -272,272 +272,206 @@ type GeometryDecomposeTestClass () =
     // Helpers
     let seg (x1,y1) (x2,y2) = (Coord (x1,y1), Coord (x2,y2))
 
+    let simplePolygon1 =
+        [
+            seg (1,1) (1,0)
+            seg (1,0) (0,0)
+            seg (0,0) (0,1)
+            seg (0,1) (1,1)
+        ]
+
+    let simplePolygon2 =
+        [
+            seg (0,0) (0,1)
+            seg (0,1) (1,1)
+            seg (1,1) (1,0)
+            seg (1,0) (0,0)
+        ]
+
+    let simplePolygon3 =
+        [
+            seg (0,3) (2,0)
+            seg (2,0) (4,3)
+            seg (4,3) (2,6)
+            seg (2,6) (0,3)
+        ]
+    let simplePolygon4 =
+        [
+            seg (-2,6) (2,0)
+            seg (2,0) (4,3)
+            seg (4,3) (2,6)
+            seg (2,6) (4,9)
+            seg (4,9) (6,6)
+            seg (6,6) (8,9)
+            seg (8,9) (4,15)
+            seg (4,15) (-2,6)
+        ]
+    let simplePolygon5 =
+        [
+            seg (1,1) (3,2)
+            seg (3,2) (2,4)
+            seg (2,4) (6,5)
+            seg (6,5) (6,1)
+            seg (6,1) (1,1)
+        ]
+
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap1 () =
         let s1 = seg (0,0) (4,0)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecOverlap (0.0, 0.25)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap2 () =
         let s1 = seg (0,0) (4,0)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
+        
         let expected =
             [
                 DecOverlap (0.0, 0.25)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap3 () =
         let s1 = seg (-1,0) (4,0)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecOverlap (0.2, 0.4)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap4 () =
         let s1 = seg (-1,0) (4,0)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
         let expected =
             [
                 DecOverlap (0.2, 0.4)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap5 () =
         let s1 = seg (0,-3) (6,6)
-        let simplePolygon =
-            [
-                seg (0,3) (2,0)
-                seg (2,0) (4,3)
-                seg (4,3) (2,6)
-                seg (2,6) (0,3)
-            ]
         let expected =
             [
                 DecOverlap (1.0/3.0, 2.0/3.0)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon3)
  
      [<TestMethod>]
      member this.TestSegmentDecomposeOverlap6 () =
         let s1 = seg (6,6) (0,-3)
-        let simplePolygon =
-            [
-                seg (0,3) (2,0)
-                seg (2,0) (4,3)
-                seg (4,3) (2,6)
-                seg (2,6) (0,3)
-            ]
+
         let expected =
             [
                 DecOverlap (1.0/3.0, 2.0/3.0)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon3)
 
      [<TestMethod>]
      member this.TestSegmentDecomposeOverlapMultiple1 () =
         let s1 = seg (0,-3) (10,12)
-        let simplePolygon =
-            [
-                seg (-2,6) (2,0)
-                seg (2,0) (4,3)
-                seg (4,3) (2,6)
-                seg (2,6) (4,9)
-                seg (4,9) (6,6)
-                seg (6,6) (8,9)
-                seg (8,9) (4,15)
-                seg (4,15) (-2,6)
-            ]
         let expected =
             [
                 DecOverlap (0.2, 0.4)
                 DecOverlap (0.6, 0.8)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon4)
 
      [<TestMethod>]
      member this.TestSegmentDecomposeOverlapMultiple2 () =
         let s1 = seg (10,12) (0,-3)
-        let simplePolygon =
-            [
-                seg (-2,6) (2,0)
-                seg (2,0) (4,3)
-                seg (4,3) (2,6)
-                seg (2,6) (4,9)
-                seg (4,9) (6,6)
-                seg (6,6) (8,9)
-                seg (8,9) (4,15)
-                seg (4,15) (-2,6)
-            ]
         let expected =
             [
                 DecOverlap (0.2, 0.4)
                 DecOverlap (0.6, 0.8)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon4)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint1 () =
         let s1 = seg (-1,-1) (4,4)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecPoint (0.2, Cross)
                 DecPoint (0.4, Cross)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint2 () =
         let s1 = seg (-1,-1) (4,4)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
         let expected =
             [
                 DecPoint (0.2, Cross)
                 DecPoint (0.4, Cross)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint3 () =
         let s1 = seg (-1,2) (4,-3)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecPoint (0.2, Cross)
                 DecPoint (0.4, Cross)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint4 () =
         let s1 = seg (-1,2) (4,-3)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
         let expected =
             [
                 DecPoint (0.2, Cross)
                 DecPoint (0.4, Cross)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeTouchPoint1 () =
         let s1 = seg (-1,1) (4,-4)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecPoint (0.2, Touch)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeTouchPoint2 () =
         let s1 = seg (-1,1) (4,-4)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
         let expected =
             [
                 DecPoint (0.2, Touch)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeTouchPoint3 () =
         let s1 = seg (-1,0) (4,5)
-        let simplePolygon =
-            [
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-            ]
         let expected =
             [
                 DecPoint (0.2, Touch)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeTouchPoint4 () =
         let s1 = seg (-1,0) (4,5)
-        let simplePolygon =
-            [
-                seg (0,0) (0,1)
-                seg (0,1) (1,1)
-                seg (1,1) (1,0)
-                seg (1,0) (0,0)
-            ]
         let expected =
             [
                 DecPoint (0.2, Touch)
             ]
-        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon)
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeTouchPoint5 () =
+        let s1 = seg (-1,0) (5,2)
+        let expected =
+            [
+                DecPoint (1.0/3.0, Touch)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon5)
