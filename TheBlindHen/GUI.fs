@@ -50,11 +50,21 @@ let stepSolver (problem: Model.Problem) =
             (holeBBPenalty bb result)
         result
 
+let findNearbyCoord x y (figure: Model.Figure) =
+    let dist (coord: Model.Coord) =
+        let dx, dy = abs (coord.X - x), abs (coord.Y - y)
+        dx+dy
+    let nearestPoint = Array.minBy dist figure.Vertices
+    if dist nearestPoint < 5 then
+        Array.tryFindIndex (fun c -> c = nearestPoint) figure.Vertices
+    else None
+
 module MVU =
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
     open Avalonia.Layout
+    open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
     type State = {
@@ -62,6 +72,7 @@ module MVU =
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
+        SelectedCoordIndex: int option
     }
 
     let init (problem: Model.Problem) =
@@ -73,9 +84,10 @@ module MVU =
             History = ResizeArray([mangledFigure])
             Index = 0
             Scale = 2.0
+            SelectedCoordIndex = None
         }
 
-    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut
+    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point
 
     let update (msg: Msg) (state: State) : State =
         match msg with
@@ -90,6 +102,19 @@ module MVU =
         | Reset -> { state with Index = 0 }
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }
+        | CanvasPressed p ->
+            let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
+            let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
+            { state with SelectedCoordIndex = selectedCoordIndex }
+        | CanvasReleased p ->
+            match state.SelectedCoordIndex, state.Index = state.History.Count - 1 with
+            | Some selected, true ->
+                let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
+                let newFigure = Model.copyFigure state.History.[state.Index]
+                newFigure.Vertices.[selected] <- Model.Coord(x, y)
+                state.History.Add (newFigure)
+                { state with SelectedCoordIndex = None; Index = state.Index + 1 }
+            | _ -> state
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
@@ -121,7 +146,7 @@ module MVU =
                             Button.content ">>"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 109))
+                            Button.onClick (fun _ -> dispatch (Backward 100))
                             Button.content "<<<"
                         ]
                         Button.create [
@@ -138,8 +163,16 @@ module MVU =
                         ]
                     ]
                 ]
+                TextBox.create [
+                    TextBox.dock Dock.Bottom
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem state.History.[state.Index]}")
+                ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
+                    Canvas.onPointerPressed (fun evt ->
+                        dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
+                    Canvas.onPointerReleased (fun evt ->
+                        dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
                     Canvas.children (
                         (
                             let figure = state.History.[state.Index]
