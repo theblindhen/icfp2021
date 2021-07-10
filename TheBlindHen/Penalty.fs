@@ -65,11 +65,12 @@ let penaltyEdgeRatioSum (problem: Problem) =
 let isCoordInsideHole holeSegments coord =
     let segment = (Coord (-1,-1), coord)
     let decoms = segmentDecomposition segment holeSegments
+    let isOne a = abs (a - 1.) < EPSILON
     let rec iter isInside =
         function
-        | CrossPoint _ :: decomTl -> iter (not isInside) decomTl
-        | TouchPoint _ :: decomTl -> iter isInside decomTl
-        | Aligned (_,b) :: decomTl -> if b = 1.0 then true else iter isInside decomTl
+        | CrossPoint a :: decomTl -> if isOne a then true else iter (not isInside) decomTl
+        | TouchPoint a :: decomTl -> if isOne a then true else iter isInside decomTl
+        | Aligned (_,b) :: decomTl -> if isOne b then true else iter isInside decomTl
         | [] -> isInside
     iter false decoms
 
