@@ -100,56 +100,56 @@ type GeometryIntersectTestClass () =
     member this.TestSegmentsIntersectPoint1 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
         let seg2 = (Coord (2, 0), Coord (0, 2))
-        let expected = Some (Point (0.5, CCW))
+        let expected = Some (Point (0.5, CCW, 0.5))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint2 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
         let seg2 = (Coord (1, 0), Coord (0, 1))
-        let expected = Some (Point (0.25, CCW))
+        let expected = Some (Point (0.25, CCW, 0.5))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)    
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint3 () =
         let seg1 = (Coord (0, 2), Coord (3, 7))
         let seg2 = (Coord (2, 0), Coord (3, 7))
-        let expected = Some (Point (1.0, CCW))
+        let expected = Some (Point (1.0, CCW, 1.0))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)      
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint4 () =
         let seg1 = (Coord (3, 2), Coord (3, 7))
         let seg2 = (Coord (3, 7), Coord (-1, 2))
-        let expected = Some (Point (1.0, CCW))
+        let expected = Some (Point (1.0, CCW, 0.0))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2) 
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint5 () =
         let seg1 = (Coord (4, 4), Coord (0, 0))
         let seg2 = (Coord (1, 7), Coord (5, -1))
-        let expected = Some (Point (0.25, CCW))
+        let expected = Some (Point (0.25, CCW, 0.5))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)      
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint6 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
         let seg2 = (Coord (0, 2), Coord (2, 0))
-        let expected = Some (Point (0.5, CW))
+        let expected = Some (Point (0.5, CW, 0.5))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint7 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
         let seg2 = (Coord (0, 2), Coord (-2, 4))
-        let expected = Some (Point (0.5, CCW))
+        let expected = Some (Point (0.5, CCW, -0.5))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint8 () =
         let seg1 = (Coord (2, 2), Coord (3, 3))
         let seg2 = (Coord (-2, 2), Coord (-3, 3))
-        let expected = Some (Point (-2.0, CCW))
+        let expected = Some (Point (-2.0, CCW, -2.0))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)
 
 [<TestClass>]
@@ -170,8 +170,8 @@ type GeometryIntersectionListTestClass () =
             ]
         let expected =
             [
-                Point (0.5, CW)
-                Point (1.0, CW)
+                Point (0.5, CW, 0.5)
+                Point (1.0, CW, 1.)
             ]
         Assert.AreEqual(expected, segmentIntersectionList s1 segs)
 
@@ -187,6 +187,22 @@ type GeometryIntersectionListTestClass () =
             ]
         let expected : SegmentIntersect list = []
         Assert.AreEqual(expected, segmentIntersectionList s1 segs)
+
+    [<TestMethod>]
+    member this.TestSegmentIntersectionListPoint3 () =
+        let s1 = seg (-1,1) (4,-4)
+        let simplePolygon =
+            [
+                seg (1,1) (1,0)
+                seg (1,0) (0,0)
+                seg (0,0) (0,1)
+                seg (0,1) (1,1)
+            ]
+        let expected = [
+            Point (0.2, CW, 1.0)
+            Point (0.2, CCW, 0.0)
+        ]
+        Assert.AreEqual(expected, segmentIntersectionList s1 simplePolygon)
 
     [<TestMethod>]
     member this.TestSegmentItersectionListOverlapPoint () =
@@ -244,9 +260,9 @@ type GeometryIntersectionListTestClass () =
             ]
         let expected =
             [
-                Point (0.25, CW)
+                Point (0.25, CW, 1.0)
                 Overlap (0.0, 0.25)
-                Point (0.0, CW)
+                Point (0.0, CW, 1.0)
             ]
         Assert.AreEqual(expected, segmentIntersectionList s1 segs)
 

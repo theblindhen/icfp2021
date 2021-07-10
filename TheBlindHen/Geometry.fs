@@ -88,8 +88,10 @@ let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
         
 type Direction = CW | CCW
 type SegmentIntersect = 
-      /// Multiplier on base segment to get the intersection point
-    | Point of float * Direction
+      /// Multiplier on seg1 to get the intersection point,
+      /// Dir from seg1 to seg2
+      /// Multiplier on seg2 to get the intersection point
+    | Point of float * Direction * float
       /// Multipliers on base segment for start/end of the overlap
     | Overlap of float * float
 
@@ -100,7 +102,7 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some (sol, det) -> Some (Point (-sol.X, if det < 0. then CW else CCW))
+    | Some (sol, det) -> Some (Point (-sol.X, (if det < 0. then CW else CCW),  -sol.Y))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
@@ -111,6 +113,8 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
             None
 
 let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : SegmentIntersect list =
+    let ltOne a = a - EPSILON < 1.0
+    let gtZero a = a + EPSILON > 0.0
     intersectors 
     |> List.choose (segmentsIntersect seg)
     |> List.map (function
@@ -123,8 +127,8 @@ let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : Segmen
             Overlap (a, b)
         | ints -> ints)
     |> List.filter (function
-        | Point (a,_) -> a >= 0. && a <= 1.
-        | Overlap (a,b) -> a <= 1. && b >= 0. ) 
+        | Point (a,_,b) -> gtZero a && ltOne a && gtZero b && ltOne b
+        | Overlap (a,b) -> ltOne a && gtZero b)
 
 type Decomposition =
     | TouchPoint of float
@@ -140,7 +144,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
     // Overlaps
     let overlapAdjacent point overlap =
         match point, overlap with
-        | Point (a, _), Overlap (b1, b2) ->
+        | Point (a, _, _), Overlap (b1, b2) ->
             abs (a - b1) < EPSILON || abs (a - b2) < EPSILON
         | _ -> false
     let intersections = segmentIntersectionList seg simplePolygon
@@ -181,12 +185,12 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
         let (decompositions_rev, olastPnt) = 
             List.fold (fun (acc, last) cur ->
                 match (last, cur) with
-                | Some (a,adir), Point (b,bdir) ->
+                | Some (a,adir), Point (b,bdir,_) ->
                     if abs (a - b) < EPSILON then
                         (crossOrTouch a adir bdir :: acc, None)
                     else
                         (CrossPoint (a) :: acc, Some (b, bdir))
-                | None, Point (a, adir) ->
+                | None, Point (a, adir,_) ->
                     (acc, Some (a, adir))
                 | Some (a, adir), Overlap (b1, b2) ->
                     (Aligned (b1,b2) :: CrossPoint (a) :: acc, None)
@@ -196,7 +200,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
         let decompositions = List.rev decompositions_rev
         // Special case: Last and first is Point 
         match olastPnt, intersections, decompositions with
-        | Some (a, adir), Point (b, bdir)::_, _::tldecomps ->
+        | Some (a, adir), Point (b, bdir,_)::_, _::tldecomps ->
             if abs (a - b) < EPSILON then
                 crossOrTouch a adir bdir :: tldecomps
             else
