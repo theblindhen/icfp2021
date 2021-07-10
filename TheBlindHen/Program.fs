@@ -21,6 +21,7 @@ let main args =
         if !gui then
             GUI.showGui problemPath problem
         else
+            FitInHole.solve problemPath problem
             0
     | _ ->
         printfn "Must specify both problem path and problem"
