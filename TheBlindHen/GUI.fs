@@ -65,12 +65,9 @@ module MVU =
     }
 
     let init (problem: Model.Problem) =
-        let mangledFigure = Model.copyFigure problem.Figure
-        //mangledFigure.Vertices.[1] <- Model.Coord(12, 15) // TODO: remove this test code!
-        //mangledFigure.Vertices.[2] <- Model.Coord(25, 20) // TODO: remove this test code!
         {
             Problem = problem
-            History = ResizeArray([mangledFigure])
+            History = ResizeArray([problem.Figure])
             Index = 0
             Scale = 2.0
             SelectedCoordIndex = None
@@ -99,7 +96,7 @@ module MVU =
             match state.SelectedCoordIndex, state.Index = state.History.Count - 1 with
             | Some selected, true ->
                 let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-                let newFigure = Model.copyFigure state.History.[state.Index]
+                let newFigure = Model.copyFigureVerticies state.History.[state.Index]
                 newFigure.Vertices.[selected] <- Model.Coord(x, y)
                 state.History.Add (newFigure)
                 { state with SelectedCoordIndex = None; Index = state.Index + 1 }

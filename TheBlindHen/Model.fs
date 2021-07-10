@@ -64,17 +64,11 @@ let solutionOfFigure (f: Figure): Solution =
         SolutionVertices = f.Vertices
     }
 
-let copyFigure (f: Figure): Figure =
-    {
-        Edges = Array.copy f.Edges
-        Vertices = Array.copy f.Vertices
-    }
-
 let mapFigureVerticies (f : Coord -> Coord) (fig: Figure): Figure =
-    {
-        Edges = Array.copy fig.Edges
-        Vertices = Array.map f fig.Vertices
-    }
+    { fig with Vertices = Array.map f fig.Vertices }
+
+let copyFigureVerticies (fig: Figure): Figure =
+    { fig with Vertices = Array.copy fig.Vertices }
 
 let copySolution (s: Solution): Solution =
     {
