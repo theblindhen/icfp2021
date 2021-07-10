@@ -101,7 +101,7 @@ let segmentOutsideHole holeSegments =
         iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
         )
 
-let penaltyEdgeRatioOutsideHole (problem: Problem) =
+let penaltyEdgeRatioOutside (problem: Problem) =
     let segmentOutsideHole = segmentOutsideHole (holeSegments problem)
     fun fig ->
         figureSegments fig
@@ -126,7 +126,7 @@ let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
                 segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) problem.Hole))
         |> float
 
-let outsideHoleSegmentPenalty (problem: Problem): Figure -> float =
+let outsideHoleSegmentPenaltySkia (problem: Problem): Figure -> float =
     let hole = holeAsPath problem
     let contains (c: Coord) = hole.Contains (float32 c.X, float32 c.Y)
     let holeSegments = Model.holeSegments problem
@@ -138,9 +138,16 @@ let outsideHoleSegmentPenalty (problem: Problem): Figure -> float =
                 segmentLengthSq (sc, tc) |> float
             else 0.0)
 
-let outsideHolePenalty (problem: Problem): Figure -> float =
-    let penalties = [ outsideHoleEndpointPenalty 
-                      // outsideHoleSegmentPenalty 
-                      penaltyEdgeRatioOutsideHole
+let figurePenalties (problem: Problem): Figure -> float list =
+    let penalties = [ penaltyEdgeLengthSqSum
+                      outsideHoleEndpointPenalty 
+                      // outsideHoleSegmentPenalty Skia
+                      penaltyEdgeRatioOutside
                     ] |> List.map (fun penalty -> penalty problem)
-    fun figure -> List.sumBy (fun penalty -> penalty figure) penalties
+    fun figure ->
+        List.map (fun penalty -> penalty figure) penalties
+
+let figurePenalty (problem: Problem): Figure -> float =
+    let penalties = figurePenalties problem
+    fun figure ->
+        List.sum (penalties figure)

@@ -23,6 +23,8 @@ let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
         Array.tryFindIndex (fun c -> c = nearestPoint) figure.Vertices
     else None
 
+let penalty: (Model.Figure -> float) option ref = ref None
+
 module MVU =
     open Elmish
     open System.IO
@@ -65,6 +67,7 @@ module MVU =
         },
         Cmd.OfFunc.attempt (fun problem ->
                 stepperGlobalVar := Some (FitInHole.stepSolver problem)
+                penalty := Some (Penalty.figurePenalty problem)
             ) problem (fun _ -> Id)
 
     // adds a new figure based on the current figure, if the current figure
@@ -245,7 +248,9 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {FitInHole.figurePenalty state.Problem shownFigure}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {match !penalty with
+                                                                        | None -> nan
+                                                                        | Some p -> p shownFigure}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
