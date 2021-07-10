@@ -75,16 +75,14 @@ module MVU =
             let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
             { state with SelectedCoordIndex = selectedCoordIndex }
         | CanvasReleased p ->
-            if state.Index = state.History.Count - 1 then
-                match state.SelectedCoordIndex with
-                | None -> state
-                | Some selected ->
-                    let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-                    let newFigure = Model.copyFigure state.History.[state.Index]
-                    newFigure.Vertices.[selected] <- Model.Coord(x, y)
-                    state.History.Add (newFigure)
-                    { state with SelectedCoordIndex = None; Index = state.Index + 1 }
-            else state
+            match state.SelectedCoordIndex, state.Index = state.History.Count - 1 with
+            | Some selected, true ->
+                let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
+                let newFigure = Model.copyFigure state.History.[state.Index]
+                newFigure.Vertices.[selected] <- Model.Coord(x, y)
+                state.History.Add (newFigure)
+                { state with SelectedCoordIndex = None; Index = state.Index + 1 }
+            | _ -> state
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
