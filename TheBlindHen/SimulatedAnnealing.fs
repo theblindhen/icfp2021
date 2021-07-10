@@ -23,7 +23,9 @@ let generalSimulatedAnnealing
                 let state' = getRandomNeighbor rnd state
                 let e = energyFunction state
                 let e' = energyFunction state'
-                if acceptanceFunction e e' temperature >= rnd.NextDouble() then
+                if e' <= 0.0 then
+                    None
+                else if acceptanceFunction e e' temperature >= rnd.NextDouble() then
                     Some state'
                 else
                     Some state

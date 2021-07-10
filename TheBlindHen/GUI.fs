@@ -17,14 +17,14 @@ let solutionPath: string option ref = ref None
 let rnd = Random(int(DateTime.Now.Ticks))
 
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
+    let square x = x * x
     figure.Vertices
     |> Array.sumBy (fun xy ->
-        max 0 (minCorner.X - xy.X) +
-        max 0 (xy.X - maxCorner.X) +
-        max 0 (minCorner.Y - xy.Y) +
-        max 0 (xy.Y - maxCorner.Y))
+        square (max 0 (minCorner.X - xy.X)) +
+        square (max 0 (xy.X - maxCorner.X)) +
+        square (max 0 (minCorner.Y - xy.Y)) +
+        square (max 0 (xy.Y - maxCorner.Y)))
     |> float
-    |> ( * ) 1000.0
 
 let figurePenalty (problem: Model.Problem) =
     let bb = Model.holeBoundingBox problem
