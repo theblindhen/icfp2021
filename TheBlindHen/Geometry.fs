@@ -183,7 +183,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
                 match (last, cur) with
                 | Some (a,adir), Point (b,bdir) ->
                     if abs (a - b) < EPSILON then
-                        (crossOrTouch a adir bdir :: acc, Some (b, bdir))
+                        (crossOrTouch a adir bdir :: acc, None)
                     else
                         (CrossPoint (a) :: acc, Some (b, bdir))
                 | None, Point (a, adir) ->
