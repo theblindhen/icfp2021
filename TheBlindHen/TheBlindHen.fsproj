@@ -12,6 +12,7 @@
     <Compile Include="Neighbors.fs" />
     <Compile Include="Hillclimber.fs" />
     <Compile Include="Penalty.fs" />
+    <Compile Include="FitInHole.fs" />
     <Compile Include="GUI.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
