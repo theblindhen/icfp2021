@@ -333,8 +333,8 @@ type GeometryDecomposeTestClass () =
             seg (0,0) (1,1)
             seg (1,1) (3,1)
             seg (3,1) (5,3)
-            seg (5,3) (0,3)
-            seg (0,2) (0,0)
+            seg (5,3) (5,0)
+            seg (5,0) (0,0)
         ]
     let saddle =
         [
