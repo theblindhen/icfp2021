@@ -23,8 +23,24 @@ type SegmentOutsideHoleTestClass () =
         seg (2, 2) (3, 1);
         seg (3, 1) (2, 0);
     ]
+    let testHole2 = [
+        seg (2, 0) (1, 1);
+        seg (1, 1) (2, 2);
+        seg (2, 2) (3, 1);
+        seg (3, 1) (2, 0);
+    ]
+    let testHole3 = [
+        seg (-2,6) (2,0)
+        seg (2,0) (4,3)
+        seg (4,3) (2,6)
+        seg (2,6) (4,9)
+        seg (4,9) (6,6)
+        seg (6,6) (8,9)
+        seg (8,9) (4,15)
+        seg (4,15) (-2,6)
+    ]
 
-     [<TestMethod>]
+    [<TestMethod>]
     member this.TestIsCoordInsideHole1 () = 
         Assert.AreEqual(true, isCoordInsideHole testHole1 (Coord(1,1)))
 
@@ -63,6 +79,41 @@ type SegmentOutsideHoleTestClass () =
     [<TestMethod>]
     member this.TestIsCoordInsideHole10 () = 
         Assert.AreEqual(false, isCoordInsideHole testHole2 (Coord(3,3)))
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole1 () = 
+        let segment = seg (2,2) (3,3) 
+        Assert.AreEqual(0.0, segmentOutsideHole testHole1 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole2 () = 
+        let segment = seg (2,2) (4,4) 
+        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole3 () = 
+        let segment = seg (0,0) (4,4) 
+        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole4 () = 
+        let segment = seg (0,2) (8,2) 
+        Assert.AreEqual(0.25, segmentOutsideHole testHole1 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole5 () = 
+        let segment = seg (2,0) (1,1) 
+        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole6 () = 
+        let segment = seg (1,1) (2,0)
+        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole7 () = 
+        let segment = seg (0,-3) (10,12)
+        Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment)
 
     [<TestMethod>]
     member this.TestSortSegments () =
