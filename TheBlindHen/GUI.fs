@@ -163,6 +163,7 @@ module MVU =
             | _ -> figure
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
+        let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -267,12 +268,12 @@ module MVU =
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
-                                let crossesHolePath = Geometry.segmentIntersectionList (sc, tc) holeSegments <> []
+                                let outsideHole = segmentOutsideHole (sc, tc) > Geometry.EPSILON
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)
                                     Line.strokeThickness 2.0
-                                    Line.stroke (if crossesHolePath then "#e74c3c" else "#00FF00")
+                                    Line.stroke (if outsideHole then "#e74c3c" else "#00FF00")
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         ) @
