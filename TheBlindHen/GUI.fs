@@ -10,6 +10,10 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
+let solutionPath: string option ref = ref None
+
+let rnd = Random(int(DateTime.Now.Ticks))
+
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
     figure.Vertices
     |> Array.sumBy (fun xy ->
@@ -49,6 +53,8 @@ let findNearbyCoord x y (figure: Model.Figure) =
     else None
 
 module MVU =
+    open Elmish
+    open System.IO
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
@@ -68,7 +74,9 @@ module MVU =
         Tool: Tool
     }
 
-    let init (problem: Model.Problem) =
+    type Msg = Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+
+    let init (problem: Model.Problem): State * Cmd<Msg>=
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
@@ -77,9 +85,7 @@ module MVU =
             SelectedCoords = []
             MoveFrom = None
             Tool = Select
-        }
-
-    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+        }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
@@ -90,58 +96,76 @@ module MVU =
             { state with Index = state.Index + 1 }
         else state
 
-    let update (msg: Msg) (state: State) : State =
+    let update (msg: Msg) (state: State): (State * Cmd<Msg>) =
         match msg with
+        | Id -> state, Cmd.none
         | Forward steps ->
             let newIndex = state.Index + steps
             let stepper = Option.get !stepperGlobalVar
             while newIndex >= state.History.Count do
                 let lastState = state.History.[state.History.Count - 1]
                 state.History.Add (stepper lastState)
-            { state with Index = newIndex }
-        | Backward steps -> { state with Index = max 0 (state.Index - steps) }
-        | Reset -> { state with Index = 0 }
-        | ZoomIn -> { state with Scale = state.Scale * 1.50 }
-        | ZoomOut -> { state with Scale = state.Scale / 1.50 }
+            { state with Index = newIndex }, Cmd.none
+        | Backward steps -> { state with Index = max 0 (state.Index - steps) }, Cmd.none
+        | Reset -> { state with Index = 0 }, Cmd.none
+        | Save ->
+            state,
+            Cmd.OfFunc.attempt
+                (fun s ->
+                    match !solutionPath with
+                    | None -> ()
+                    | Some path ->
+                        let postfix = rnd.Next(999999)
+                        let solutionFile = sprintf "%s%6d" path postfix
+                        Directory.CreateDirectory path |> ignore
+                        printfn "Wrote solution to %s" solutionFile
+                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
+                state
+                (fun _ -> Id)
+        | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
+        | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool with
             | Select ->
                 let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
                 match selectedCoordIndex with
-                | None -> state
-                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }
+                | None -> state, Cmd.none
+                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
             | Deselect ->
                 let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
                 match selectedCoordIndex with
-                | None -> state
-                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }
+                | None -> state, Cmd.none
+                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
             | Move ->
-                { state with MoveFrom = Some (x, y) }
+                { state with MoveFrom = Some (x, y) }, Cmd.none
             | Rotate ->
-                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state
+                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state, Cmd.none
         | CanvasReleased p ->
             match state.Tool, state.MoveFrom with
             | Move, Some (x1, y1) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
-                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state
-            | _ -> state
-        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }
+                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state, Cmd.none
+            | _ -> state, Cmd.none
+        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
         DockPanel.create [
             DockPanel.children [
-                Button.create [
-                    Button.dock Dock.Bottom
-                    Button.onClick (fun _ -> dispatch Reset)
-                    Button.content "reset"
-                ]                
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
-                    UniformGrid.columns 2
+                    UniformGrid.columns 6
                     UniformGrid.children [
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 100))
+                            Button.content "<<<"
+                        ]
+                        Button.create [
+                            Button.onClick (fun _ -> dispatch (Backward 10))
+                            Button.content "<<"
+                        ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Backward 1))
                             Button.content "<"
@@ -151,28 +175,36 @@ module MVU =
                             Button.content ">"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 10))
-                            Button.content "<<"
-                        ]
-                        Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 10))
                             Button.content ">>"
-                        ]
-                        Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 100))
-                            Button.content "<<<"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch (Forward 100))
                             Button.content ">>>"
                         ]
+                    ]
+                ]
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomOut)
-                            Button.content "-"
+                            Button.content "Zoom out"
                         ]
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomIn)
-                            Button.content "+"
+                            Button.content "Zoom in"
+                        ]
+                        Button.create [
+                            Button.dock Dock.Bottom
+                            Button.onClick (fun _ -> dispatch Reset)
+                            Button.content "Reset"
+                        ]
+                        Button.create [
+                            Button.dock Dock.Bottom
+                            Button.onClick (fun _ -> dispatch Save)
+                            Button.content "Save"
                         ]
                     ]
                 ]
@@ -279,7 +311,7 @@ type MainWindow() as this =
 
         let problem = Option.get !problemGlobalVar
 
-        Elmish.Program.mkSimple MVU.init MVU.update MVU.view
+        Program.mkProgram MVU.init MVU.update MVU.view
         |> Program.withHost this
         |> Program.runWith problem
 
@@ -296,9 +328,15 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui problem =
+let showGui (problemPath: string) (problemNo: int) =
+        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
+        printfn "%A" problem
+        let solution = Model.solutionOfFigure problem.Figure
+        printfn $"Solution:\n{Model.deparseSolution solution}"
+
         problemGlobalVar := Some problem 
         stepperGlobalVar := Some (stepSolver problem)
+        solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
