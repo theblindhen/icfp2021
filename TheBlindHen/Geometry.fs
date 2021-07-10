@@ -100,7 +100,7 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some (sol, det) -> Some (Point (-sol.X, if det < 0. then CCW else CW))
+    | Some (sol, det) -> Some (Point (-sol.X, if det < 0. then CW else CCW))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
@@ -131,56 +131,99 @@ type Decomposition =
     | CrossPoint of float
     | Aligned of float * float
 
+/// Decompose a segment according to its intersection with a simple polygon
+/// This assumes that the simplePolygon's segments are given in order, i.e. that
+/// a segment's end point is always the next segment's starting point 
 let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
-    let intersections = segmentIntersectionList seg simplePolygon
-    let overlapEndpoints : HashSet<int> =
-        intersections
-        |> List.collect (function
-                            // TODO: These numbers should be scaled by seg.Length
-                         | Overlap (a,b) -> [ int (round a); int (round b) ]
-                         | _ -> [])
-        |> HashSet.ofList
-    intersections
-    |> List.filter (function
-        | Overlap _ -> true
-        | Point (a,_) ->
-            // TODO: These numbers should be scaled by seg.Length
-            not (HashSet.contains (int (round a)) overlapEndpoints))
-    |> List.map (function
-        | Overlap (a, b) -> Aligned (a,b)
-        | Point (a, _) -> CrossPoint (a) // TODO: Wrong
-        )
+    // Get the ordered list of intersections
+    // Pass over intersections and remove the Points that are adjacent to Overlaps
+    let intersections = 
+        segmentIntersectionList seg simplePolygon
+        |> (List.fold (fun acc ints ->
+            match (acc, ints) with
+            | Point (a, _)::tl, Overlap (b, _) ->
+                if abs (a - b) < EPSILON then
+                    ints :: tl // Skip Point
+                else
+                    ints :: acc // Keep Point
+            | Overlap (a1,a2)::_, Point (b, _) ->
+                if abs (a - b) < EPSILON then
+                    acc // Skip Point
+                else
+                    ints :: acc // Keep Point
+            | _ -> ints :: acc // Keep Point
+            ) [])
+    // Special case: Last is Overlap first is adjacent Point
+    let intersections = 
+        match intersections, intersections.[intersections.Length - 1] with
+        | Point (a,_)::tl, Overlap (b,_) ->
+            if abs (a - b) < EPSILON then
+                tl
+            else
+                intersections
+        | _ ->
+            intersections
+    // Convert to Decomposition
+    // Convert repeated points to CrossPoint / TouchPoint
+    let decompositions =
+        let crossOrTouch a adir bdir =
+            if adir = bdir then
+                CrossPoint(a)
+            else
+                TouchPoint(a)
+        let (decompositions, olastPnt) = 
+            List.fold (fun (acc, last) cur ->
+                match (last, cur) with
+                | Some (a,adir), Point (b,bdir) ->
+                    if abs (a - b) < EPSILON then
+                        (crossOrTouch a adir bdir :: acc, Some (b, bdir))
+                    else
+                        (CrossPoint (a) :: acc, Some (b, bdir))
+                | None, Point (a, adir) ->
+                    (acc, Some (a, adir))
+                | Some (a, adir), Overlap (b1, b2) ->
+                    (Aligned (b1,b2) :: CrossPoint (a) :: acc, None)
+                | None, Overlap (b1, b2) ->
+                    (Aligned (b1,b2) :: acc, None)
+                ) ([], None) intersections
+        // Special case: Last and first is Point 
+        match olastPnt, intersections, decompositions with
+        | Some (a, adir), Point (b, bdir)::_, _::tldecomps ->
+            if abs (a - b) < EPSILON then
+                crossOrTouch a adir bdir :: tldecomps
+            else
+                CrossPoint a :: decompositions
+        |  _ -> decompositions
+    // Sort the decompositions by intersection point
+    decompositions
     |> List.sortBy (function
         | TouchPoint a -> a
         | CrossPoint a -> a
         | Aligned (a,_) -> a)
 
 
-// /// A structure for precomputed set of points in the hole
-// type HolePoints = {
-//     Arr: bool[,]
-//     Dx: int
-//     Dy: int
-// }
+/// A structure for precomputed set of points in the hole
+type HolePoints = {
+    Arr: bool[,]
+    Dx: int
+    Dy: int
+}
 
-// /// Return the set of points of the hole of the problem
+/// Return the set of points of the hole of the problem
 // let getHolePoints (problem: Problem) =
 //     let holeSegs = holeSegments problem
 //     let cmin, cmax = holeBoundingBox problem
 //     let arr = Array2D.init (cmax.X - cmin.X + 1) (cmax.Y - cmin.Y + 1) (fun _ _ -> false)
+//     let markPoint (x: int, y: int) =
+//         arr.[x - cmin.X,y - cmin.Y] <- true
 //     for y in cmin.Y .. cmax.Y do
 //         let seg = (Coord (cmin.X, y), Coord (cmax.X, y))
 //         let lastCross = ref -1.
 //         let inHole = ref false
 //         segmentDecomposition seg holeSegs
-//         |> List.iter (fun ints ->
-//             match ints with
-//             | Point a ->
+//         |> List.iter (function
+//             | TouchPoint a ->
 //                 if !inHole then
-//                     let startX = ceil (!lastCross-EPSILON)
-//                     let endX = floor (a + EPSILON)
-//                     for x in  startX .. endX  do
-//                         if float x >= cmin.X && float x <= cmax.X then
 //                             arr[x - cmin.X, y - cmin.Y] = true
 //                 )
 

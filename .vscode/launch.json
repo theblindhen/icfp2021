@@ -36,6 +36,17 @@
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
+        },
+        {
+            "name": "Run Unittests main program (manual debugging)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build_debug",
+            "program": "${workspaceFolder}/UnitTests/bin/Debug/net5.0/UnitTests.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
         }
     ]
 }
