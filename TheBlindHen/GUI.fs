@@ -58,8 +58,6 @@ module MVU =
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
-    open Avalonia.Layout
-    open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
     type Tool = Move | Rotate
@@ -70,26 +68,27 @@ module MVU =
         Index: int // position in History
         Scale: float
         Selection: int list
-        MoveFrom: (int * int) option
-        MovingDiff: (int * int) option
         Tool: Tool
+        InProgress: ((int * int) * (int * int)) option
     }
 
     type Msg =
         | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
-        | Select of Avalonia.Point | Deselect of Avalonia.Point
-        | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | CanvasMoved of Avalonia.Point
+        | Select of Avalonia.Point
+        | Deselect of Avalonia.Point
+        | CanvasPressed of Avalonia.Point
+        | CanvasReleased of Avalonia.Point
+        | CanvasMoved of Avalonia.Point
 
-    let init (problem: Model.Problem): State * Cmd<Msg>=
+    let init (problem: Model.Problem): State * Cmd<Msg> =
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
             Index = 0
             Scale = 2.0
             Selection = []
-            MoveFrom = None
-            MovingDiff = None
             Tool = Move
+            InProgress = None
         }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
@@ -142,35 +141,35 @@ module MVU =
             | Some index -> { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-            match state.Tool with
-            | Move ->
-                { state with MoveFrom = Some (x, y) }, Cmd.none
-            | Rotate ->
-                applyIfLast (Transformations.rotateSelectedVerticiesAround state.Selection (x, y)) state, Cmd.none
+            { state with InProgress = Some ((x, y), (x, y)) }, Cmd.none
         | CanvasMoved p ->
-            match state.Tool, state.MoveFrom with
-            | Move, Some (x1, y1) ->
+            match state.InProgress with
+            | Some ((x1, y1), _) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
-                let dx, dy = x2 - x1, y2 - y1
-                { state with MovingDiff = Some (dx, dy) }, Cmd.none
+                { state with InProgress = Some ((x1, y1), (x2, y2)) }, Cmd.none
             | _ -> state, Cmd.none
         | CanvasReleased p ->
-            match state.Tool, state.MoveFrom with
-            | Move, Some (x1, y1) ->
+            match state.Tool, state.InProgress with
+            | Move, Some ((x1, y1), _) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
                 let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy)) state
-                { translatedState with MoveFrom = None; MovingDiff = None }, Cmd.none
+                { translatedState with InProgress = None }, Cmd.none
+            | Rotate, Some ((x1, y1), _) ->
+                let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAround state.Selection (x1, y1)) state
+                { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
-        | SelectTool tool -> { state with Tool = tool; MoveFrom = None; MovingDiff = None }, Cmd.none
+        | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
         let figure = state.History.[state.Index]
         let vs =
-            match state.MovingDiff with
-            | None -> figure.Vertices
-            | Some (dx, dy) -> (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+            match state.Tool, state.InProgress with
+            | Move, Some ((x1, y1), (x2, y2)) ->
+                let (dx, dy) = (x2 - x1, y2 - y1)
+                (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+            | _ -> figure.Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
