@@ -78,13 +78,13 @@ let copySolution (s: Solution): Solution =
 
 let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
-        Edges = raw.edges |> Array.map (fun [|x; y|] -> (x, y))
-        Vertices = raw.vertices |> Array.map (fun [|x; y|] -> Coord(x, y))
+        Edges = raw.edges |> Array.map (fun xy -> (xy.[0], xy.[1]))
+        Vertices = raw.vertices |> Array.map (fun xy -> Coord(xy.[0], xy.[1]))
     }
 
 let private fromRawProblem (raw: Raw.Problem) : Problem =
     {
-        Hole = raw.hole |> Array.map (fun [|x; y|] -> Coord(x, y))
+        Hole = raw.hole |> Array.map (fun xy -> Coord(xy.[0], xy.[1]))
         Figure = raw.figure |> fromRawFigure
         Epsilon = raw.epsilon
     }
