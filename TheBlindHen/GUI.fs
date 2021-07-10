@@ -43,9 +43,9 @@ let stepSolver (problem: Model.Problem) =
             (holeBBPenalty bb result)
         result
 
-let findNearbyCoord x y (figure: Model.Figure) =
+let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
-        let dx, dy = abs (coord.X - x), abs (coord.Y - y)
+        let dx, dy = abs (coord.X - c.X), abs (coord.Y - c.Y)
         dx+dy
     let nearestPoint = Array.minBy dist figure.Vertices
     if dist nearestPoint < 5 then
@@ -62,7 +62,7 @@ module MVU =
     open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
-    type Tool = Select | Deselect | Move | Rotate
+    type Tool = Move | Rotate
 
     type State = {
         Problem: Model.Problem
@@ -77,6 +77,7 @@ module MVU =
 
     type Msg =
         | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
+        | Select of Avalonia.Point | Deselect of Avalonia.Point
         | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | CanvasMoved of Avalonia.Point
 
     let init (problem: Model.Problem): State * Cmd<Msg>=
@@ -88,7 +89,7 @@ module MVU =
             SelectedCoords = []
             MoveFrom = None
             MovingDiff = None
-            Tool = Select
+            Tool = Move
         }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
@@ -101,6 +102,7 @@ module MVU =
         else state
 
     let update (msg: Msg) (state: State): (State * Cmd<Msg>) =
+        let pointToCoord (p: Avalonia.Point) = Model.Coord (int(p.X / state.Scale), int(p.Y / state.Scale))
         match msg with
         | Id -> state, Cmd.none
         | Forward steps ->
@@ -128,19 +130,19 @@ module MVU =
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
+        | Select p ->
+            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
+            match selectedCoordIndex with
+            | None -> state, Cmd.none
+            | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
+        | Deselect p ->
+            let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
+            match selectedCoordIndex with
+            | None -> state, Cmd.none
+            | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool with
-            | Select ->
-                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-                match selectedCoordIndex with
-                | None -> state, Cmd.none
-                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
-            | Deselect ->
-                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-                match selectedCoordIndex with
-                | None -> state, Cmd.none
-                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
             | Move ->
                 { state with MoveFrom = Some (x, y) }, Cmd.none
             | Rotate ->
@@ -230,16 +232,6 @@ module MVU =
                     UniformGrid.columns 4
                     UniformGrid.children [
                         RadioButton.create [
-                            RadioButton.content "Select"
-                            RadioButton.isChecked (state.Tool == Select)
-                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Select))
-                        ]
-                        RadioButton.create [
-                            RadioButton.content "Deselect"
-                            RadioButton.isChecked (state.Tool == Deselect)
-                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Deselect))
-                        ]
-                        RadioButton.create [
                             RadioButton.content "Move"
                             RadioButton.isChecked (state.Tool == Move)
                             RadioButton.onChecked (fun _ -> dispatch (SelectTool Move))
@@ -259,12 +251,18 @@ module MVU =
                     Canvas.background "#2c3e50"
                     Canvas.onPointerPressed (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
-                            dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
+                            let shift = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Shift)
+                            let ctrl = evt.KeyModifiers.HasFlag (Avalonia.Input.KeyModifiers.Control)
+                            let position = evt.GetPosition null
+                            match shift, ctrl with
+                            | true, false -> dispatch (Select position)
+                            | false, true -> dispatch (Deselect position)
+                            | _ -> dispatch (CanvasPressed position))
                     Canvas.onPointerMoved (fun evt ->
-                            dispatch (CanvasMoved (evt.GetPosition (evt.Source :?> IVisual))))
+                            dispatch (CanvasMoved (evt.GetPosition null)))
                     Canvas.onPointerReleased (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
-                            dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
+                            dispatch (CanvasReleased (evt.GetPosition null)))
                     Canvas.children (
                         (
                             figure.Edges
