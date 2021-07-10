@@ -68,9 +68,16 @@ let isCoordInsideHole holeSegments coord =
     let isOne a = abs (a - 1.) < EPSILON
     let rec iter isInside =
         function
-        | CrossPoint a :: decomTl -> if isOne a then true else iter (not isInside) decomTl
-        | TouchPoint a :: decomTl -> if isOne a then true else iter isInside decomTl
-        | Aligned (_,b) :: decomTl -> if isOne b then true else iter isInside decomTl
+        | DecPoint (a, typ) :: decomTl ->
+            if isOne a then
+                true
+            else
+                iter (if typ = Cross then not isInside else isInside) decomTl
+        | DecOverlap (_,b, typ) :: decomTl ->
+            if isOne b then
+                true
+            else
+                iter (if typ = Cross then not isInside else isInside) decomTl
         | [] -> isInside
     iter false decoms
 
@@ -79,11 +86,12 @@ let segmentOutsideHole holeSegments (a,b) =
     let decoms = segmentDecomposition (a,b) holeSegments
     let rec iter (isInside, acc, last) =
         function
-        | CrossPoint a :: decomTl -> 
+        | DecPoint (a, Cross) :: decomTl -> 
             let acc = if isInside then acc else acc + a - last
             iter (not isInside, (if isInside then acc else acc + a - last), a) decomTl
-        | TouchPoint _ :: decomTl -> iter (isInside, acc, last) decomTl
-        | Aligned (a,b) :: decomTl -> 
+        | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, last) decomTl
+        | DecOverlap (a,b, typ) :: decomTl -> 
+            //TODO: Handle typ
             let accUpd = if isInside then acc else acc + a - last
             let lastUpd = if isInside then b else last
             iter (not isInside, acc, lastUpd) decomTl            
