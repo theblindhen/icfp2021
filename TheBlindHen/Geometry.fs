@@ -88,6 +88,16 @@ let _determinantToDirection (d: float) : Direction =
 let vectorsDirection (v1: Vector) (v2: Vector) : Direction =
     _determinantToDirection (vectorDeterminant v1 v2)
 
+let addVectors (v1: Vector) (v2: Vector): Vector =
+    Vector (v1.X + v2.X, v1.Y + v2.Y)
+
+let scaleVector (v: Vector) (s: float) =
+    Vector (v.X * s, v.Y * s)
+
+/// Reflect vector v through l, where l describes a line through the origin
+let reflectVector (v: Vector) (l: Vector): Vector =
+    addVectors (scaleVector l (2.0 * (vectorDotProduct v l) / (vectorDotProduct l l))) (scaleVector v (-1.0))
+
 /// Solve a 2x2 matrix problem by inversion.
 /// Returns None if the matrix is singular.
 /// Note that there may still be a solution, if the column space is
