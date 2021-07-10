@@ -69,7 +69,7 @@ module MVU =
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
-        SelectedCoords: int list
+        Selection: int list
         MoveFrom: (int * int) option
         MovingDiff: (int * int) option
         Tool: Tool
@@ -86,7 +86,7 @@ module MVU =
             History = ResizeArray([problem.Figure])
             Index = 0
             Scale = 2.0
-            SelectedCoords = []
+            Selection = []
             MoveFrom = None
             MovingDiff = None
             Tool = Move
@@ -134,19 +134,19 @@ module MVU =
             let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
             match selectedCoordIndex with
             | None -> state, Cmd.none
-            | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
+            | Some index -> { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
         | Deselect p ->
             let selectedCoordIndex = findNearbyCoord (pointToCoord p) state.History.[state.Index]
             match selectedCoordIndex with
             | None -> state, Cmd.none
-            | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
+            | Some index -> { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool with
             | Move ->
                 { state with MoveFrom = Some (x, y) }, Cmd.none
             | Rotate ->
-                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state, Cmd.none
+                applyIfLast (Transformations.rotateSelectedVerticiesAround state.Selection (x, y)) state, Cmd.none
         | CanvasMoved p ->
             match state.Tool, state.MoveFrom with
             | Move, Some (x1, y1) ->
@@ -159,7 +159,7 @@ module MVU =
             | Move, Some (x1, y1) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
-                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state
+                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy)) state
                 { translatedState with MoveFrom = None; MovingDiff = None }, Cmd.none
             | _ -> state, Cmd.none
         | SelectTool tool -> { state with Tool = tool; MoveFrom = None; MovingDiff = None }, Cmd.none
@@ -170,7 +170,7 @@ module MVU =
         let vs =
             match state.MovingDiff with
             | None -> figure.Vertices
-            | Some (dx, dy) -> (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy) figure).Vertices
+            | Some (dx, dy) -> (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -277,7 +277,7 @@ module MVU =
                             )
                         ) @
                         (
-                            state.SelectedCoords
+                            state.Selection
                             |> List.map (fun i ->
                                 let c = vs.[i]
                                 Ellipse.create [
@@ -307,7 +307,6 @@ module MVU =
 open Elmish
 open Avalonia
 open Avalonia.Controls.ApplicationLifetimes
-open Avalonia.Input
 open Avalonia.FuncUI
 open Avalonia.FuncUI.Elmish
 open Avalonia.FuncUI.Components.Hosts
