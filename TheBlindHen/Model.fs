@@ -67,6 +67,9 @@ let solutionOfFigure (f: Figure): Solution =
 let mapFigureVerticies (f : Coord -> Coord) (fig: Figure): Figure =
     { fig with Vertices = Array.map f fig.Vertices }
 
+let mapiFigureVerticies (f : int -> Coord -> Coord) (fig: Figure): Figure =
+    { fig with Vertices = Array.mapi f fig.Vertices }
+
 let copyFigureVerticies (fig: Figure): Figure =
     { fig with Vertices = Array.copy fig.Vertices }
 

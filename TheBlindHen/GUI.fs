@@ -56,14 +56,15 @@ module MVU =
     open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
-    type Tool = Move | Rotate
+    type Tool = Select | Deselect | Move | Rotate
 
     type State = {
         Problem: Model.Problem
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
-        SelectedCoordIndex: int option
+        SelectedCoords: int list
+        MoveFrom: (int * int) option
         Tool: Tool
     }
 
@@ -73,8 +74,9 @@ module MVU =
             History = ResizeArray([problem.Figure])
             Index = 0
             Scale = 2.0
-            SelectedCoordIndex = None
-            Tool = Move
+            SelectedCoords = []
+            MoveFrom = None
+            Tool = Select
         }
 
     type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
@@ -85,7 +87,7 @@ module MVU =
         if state.Index = state.History.Count - 1 then
             let newFig = f state.History.[state.Index]
             state.History.Add (newFig)
-            { state with SelectedCoordIndex = None; Index = state.Index + 1 }
+            { state with Index = state.Index + 1 }
         else state
 
     let update (msg: Msg) (state: State) : State =
@@ -104,21 +106,28 @@ module MVU =
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool with
-            | Move -> 
+            | Select ->
                 let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-                { state with SelectedCoordIndex = selectedCoordIndex }
+                match selectedCoordIndex with
+                | None -> state
+                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }
+            | Deselect ->
+                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
+                match selectedCoordIndex with
+                | None -> state
+                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }
+            | Move ->
+                { state with MoveFrom = Some (x, y) }
             | Rotate ->
-                applyIfLast (Transformations.rotateVerticiesAround (x, y)) state
+                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state
         | CanvasReleased p ->
-            match state.SelectedCoordIndex with
-            | Some selected ->
-                let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-                applyIfLast (fun fig ->
-                    let newFig = Model.copyFigureVerticies fig
-                    newFig.Vertices.[selected] <- Model.Coord(x, y)
-                    newFig) state
+            match state.Tool, state.MoveFrom with
+            | Move, Some (x1, y1) ->
+                let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
+                let dx, dy = x2 - x1, y2 - y1
+                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state
             | _ -> state
-        | SelectTool tool -> { state with Tool = tool }
+        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
@@ -169,8 +178,18 @@ module MVU =
                 ]
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
-                    UniformGrid.columns 2
+                    UniformGrid.columns 4
                     UniformGrid.children [
+                        RadioButton.create [
+                            RadioButton.content "Select"
+                            RadioButton.isChecked (state.Tool == Select)
+                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Select))
+                        ]
+                        RadioButton.create [
+                            RadioButton.content "Deselect"
+                            RadioButton.isChecked (state.Tool == Deselect)
+                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Deselect))
+                        ]
                         RadioButton.create [
                             RadioButton.content "Move"
                             RadioButton.isChecked (state.Tool == Move)
@@ -209,6 +228,20 @@ module MVU =
                                     Line.stroke "#e74c3c"
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
+                        ) @
+                        (
+                            let figure = state.History.[state.Index]
+                            let vs = figure.Vertices
+                            state.SelectedCoords
+                            |> List.map (fun i ->
+                                let c = vs.[i]
+                                Ellipse.create [
+                                    Ellipse.left (float(c.X) * scale - (1.5 * scale))
+                                    Ellipse.top (float(c.Y) * scale - (1.5 * scale))
+                                    Ellipse.width (3.0 * scale)
+                                    Ellipse.height (3.0 * scale)
+                                    Ellipse.fill "#95a5a6"
+                                ] :> Avalonia.FuncUI.Types.IView)
                         ) @
                         (
                             Model.holeSegments state.Problem
