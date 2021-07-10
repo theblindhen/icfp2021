@@ -167,83 +167,46 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
     if List.isEmpty intersections then
         []
     else
-    // // Pass over intersections and remove the Points that are adjacent to
-    // // Overlaps
-    // let intersections = 
-    //     List.fold (fun acc ints ->
-    //         match (acc, ints) with
-    //         | (Point _ as pnt)::tl, Overlap _ ->
-    //             if overlapAdjacent pnt ints then
-    //                 ints :: tl // Skip Point
-    //             else
-    //                 ints :: acc // Keep Point
-    //         | (Overlap _ as ovl)::_, Point _ ->
-    //             if overlapAdjacent ints ovl then
-    //                 acc // Skip Point
-    //             else
-    //                 ints :: acc // Keep Point
-    //         | _ -> ints :: acc // Keep Point
-    //         ) [] intersections
-    //     |> List.rev
-    // // Special case: Last is Overlap first is adjacent Point
-    // let intersections = 
-    //     match intersections, intersections.[intersections.Length - 1] with
-    //     | (Point _ as pnt)::tl, (Overlap _ as ovl) ->
-    //         if overlapAdjacent pnt ovl then
-    //             tl
-    //         else
-    //             intersections
-    //     | _ ->
-    //         intersections
     // Convert to Decomposition
     // Convert repeated points to CrossPoint / TouchPoint
-    let decompositions =
-        let lastDir  =
-            let firstIdx, _ = intersections.[0]
-            let segArr = Array.ofList simplePolygon
-            let segv = vectorOfSegment seg
-            let rec getLastDir i =
-                let i = if i = 0 then segArr.Length-1 else i - 1
-                let holeSegv = vectorOfSegment segArr.[i]
-                let d = vectorDeterminant segv holeSegv
-                if d < EPSILON then
-                    getLastDir i
-                else
-                    vectorsDirection segv holeSegv
-            getLastDir firstIdx
-        let (decompositions_rev, lastDir) = 
-            List.fold (fun (acc, lastDir) cur ->
-                match cur with
-                | Point (acur, curDir, bcur) ->
-                    let typ =
-                        match isZero bcur, isOne bcur with
-                        | false, false ->
-                            // In the middle of a hole segment
-                            Cross
-                        | _, true ->
-                            // At the end of a hole segment
-                             Touch
-                        | true, _ -> 
-                            // At the beginning of a hole segment
-                            if curDir = lastDir then Cross else Touch
+    let lastDir  =
+        // TODO: This should only be computed if the first Point in
+        // intersections is with hole-mult 0.
+        let firstIdx, _ = intersections.[0]
+        let segArr = Array.ofList simplePolygon
+        let segv = vectorOfSegment seg
+        let rec getLastDir i =
+            let i = if i = 0 then segArr.Length-1 else i - 1
+            let holeSegv = vectorOfSegment segArr.[i]
+            let d = vectorDeterminant segv holeSegv
+            if d < EPSILON then
+                getLastDir i
+            else
+                vectorsDirection segv holeSegv
+        getLastDir firstIdx
+    let (decompositionsRev, _) = 
+        List.fold (fun (acc, lastDir) cur ->
+            match cur with
+            | Point (acur, curDir, bcur) ->
+                match isZero bcur, isOne bcur with
+                | false, false ->
+                    // In the middle of a hole segment
+                    (DecPoint (acur, Cross)::acc, curDir)
+                | _, true ->
+                    // At the end of a hole segment
+                    (acc, curDir)
+                | true, _ -> 
+                    // At the beginning of a hole segment
+                    let typ = if curDir = lastDir then Cross else Touch
                     (DecPoint (acur, typ)::acc, curDir)
-                | Overlap (a1, a2) ->
-                    (DecOverlap (a1, a2)::acc, lastDir)
-                ) ([], lastDir) (List.map snd intersections)
-        let decompositions = List.rev decompositions_rev
-        decompositions
-        // Special case: Last and first is Point 
-        // match olastPnt, intersections, decompositions with
-        // | Some (a, adir), Point (b, bdir,_)::_, _::tldecomps ->
-        //     if abs (a - b) < EPSILON then
-        //         crossOrTouch a adir bdir :: tldecomps
-        //     else
-        //         CrossPoint a :: decompositions
-        // |  _ -> decompositions
+            | Overlap (a1, a2) ->
+                (DecOverlap (a1, a2)::acc, lastDir)
+            ) ([], lastDir) (List.map snd intersections)
+    decompositionsRev
+    |> List.rev 
     // Sort the decompositions by intersection point
-    decompositions
     |> List.sortBy (function
-        | DecPoint (a,_) -> a
+        | DecPoint (a, _) -> a
         | DecOverlap (a,_) -> a)
 
 
