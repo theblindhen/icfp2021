@@ -14,7 +14,6 @@ let problemEdgeLengthSqRanges (problem: Problem) =
             (float len) * (1. + (float problem.Epsilon)/1000000.)))
     |> Array.ofList
 
-
 /// Return the sum of how much each edge's sq-length is outside the allowed range
 let penaltyEdgeLengthSqSum (problem: Problem) =
     let edgeSqRanges = problemEdgeLengthSqRanges problem
@@ -128,3 +127,21 @@ let rasterizeHole (problem: Problem) =
     canvas.DrawPath(path, paint)
     // TODO: conservative fill, maybe retracting by 1 pixel
     // TODO: return a bitmap of some sort
+
+let holeAsPath (problem: Problem) =
+    let path = new SkiaSharp.SKPath()
+    let points = problem.Hole
+    path.MoveTo(float32 points.[0].X, float32 points.[0].Y)
+    for i in 1 .. points.Length - 1 do
+        path.LineTo(float32 points.[i].X, float32 points.[i].Y)
+    path.Close()
+    path
+
+let outsideHolePenalty (problem: Problem): Figure -> float =
+    let hole = holeAsPath problem
+    fun figure ->
+        figure.Vertices
+        |> Array.filter (fun (c: Coord) -> not (hole.Contains(float32 c.X, float32 c.Y)))
+        |> Array.sumBy (fun (c: Coord) ->
+                segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) problem.Hole))
+        |> float

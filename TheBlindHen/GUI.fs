@@ -27,23 +27,23 @@ let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Mode
     |> float
 
 let figurePenalty (problem: Model.Problem) =
-    let bb = Model.holeBoundingBox problem
+    let outsideHolePenalty = Penalty.outsideHolePenalty problem
     fun figure ->
         Penalty.penaltyEdgeLengthSqSum problem figure +
-        holeBBPenalty bb figure
+        outsideHolePenalty figure
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
     let getNeighbor = Neighbors.balancedCollectionOfNeighbors
     let penalty = figurePenalty problem
-    let bb = Model.holeBoundingBox problem
+    let outsideHolePenalty = Penalty.outsideHolePenalty problem
     let step = SimulatedAnnealing.simpleSimulatedAnnealing penalty getNeighbor 100_000 rnd ()
     fun figure ->
         let result = Option.defaultValue figure (step figure)
         // TODO: this is just debug printing
         printfn "penalty = %f + %f"
             (Penalty.penaltyEdgeLengthSqSum problem result)
-            (holeBBPenalty bb result)
+            (outsideHolePenalty result)
         result
 
 let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
