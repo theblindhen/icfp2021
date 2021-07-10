@@ -71,10 +71,13 @@ module MVU =
         Scale: float
         SelectedCoords: int list
         MoveFrom: (int * int) option
+        MovingDiff: (int * int) option
         Tool: Tool
     }
 
-    type Msg = Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+    type Msg =
+        | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
+        | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | CanvasMoved of Avalonia.Point
 
     let init (problem: Model.Problem): State * Cmd<Msg>=
         {
@@ -84,6 +87,7 @@ module MVU =
             Scale = 2.0
             SelectedCoords = []
             MoveFrom = None
+            MovingDiff = None
             Tool = Select
         }, Cmd.none
 
@@ -141,17 +145,30 @@ module MVU =
                 { state with MoveFrom = Some (x, y) }, Cmd.none
             | Rotate ->
                 applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state, Cmd.none
+        | CanvasMoved p ->
+            match state.Tool, state.MoveFrom with
+            | Move, Some (x1, y1) ->
+                let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
+                let dx, dy = x2 - x1, y2 - y1
+                { state with MovingDiff = Some (dx, dy) }, Cmd.none
+            | _ -> state, Cmd.none
         | CanvasReleased p ->
             match state.Tool, state.MoveFrom with
             | Move, Some (x1, y1) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
-                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state, Cmd.none
+                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state
+                { translatedState with MoveFrom = None; MovingDiff = None }, Cmd.none
             | _ -> state, Cmd.none
-        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }, Cmd.none
+        | SelectTool tool -> { state with Tool = tool; MoveFrom = None; MovingDiff = None }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
+        let figure = state.History.[state.Index]
+        let vs =
+            match state.MovingDiff with
+            | None -> figure.Vertices
+            | Some (dx, dy) -> (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy) figure).Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -243,13 +260,13 @@ module MVU =
                     Canvas.onPointerPressed (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
                             dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
+                    Canvas.onPointerMoved (fun evt ->
+                            dispatch (CanvasMoved (evt.GetPosition (evt.Source :?> IVisual))))
                     Canvas.onPointerReleased (fun evt ->
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
                             dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
                     Canvas.children (
                         (
-                            let figure = state.History.[state.Index]
-                            let vs = figure.Vertices
                             figure.Edges
                             |> Array.toList
                             |> List.map (fun (s,t) ->
@@ -262,8 +279,6 @@ module MVU =
                             )
                         ) @
                         (
-                            let figure = state.History.[state.Index]
-                            let vs = figure.Vertices
                             state.SelectedCoords
                             |> List.map (fun i ->
                                 let c = vs.[i]
