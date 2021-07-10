@@ -147,7 +147,7 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
                 else
                     ints :: acc // Keep Point
             | Overlap (a1,a2)::_, Point (b, _) ->
-                if abs (a - b) < EPSILON then
+                if abs (a1 - b) < EPSILON then
                     acc // Skip Point
                 else
                     ints :: acc // Keep Point
