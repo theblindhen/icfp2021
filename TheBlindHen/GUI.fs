@@ -28,7 +28,7 @@ let figurePenalty (problem: Model.Problem) =
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let neighbors = Neighbors.translateRandomCoord rnd
+    let neighbors = Neighbors.balancedCollectionOfNeighbors rnd
     let penalty = figurePenalty problem
     let bb = Model.holeBoundingBox problem
     fun figure ->

@@ -120,3 +120,13 @@ let holeBoundingBox (problem: Problem) =
     let maxx = xs |> Array.max
     let maxy = ys |> Array.max
     (Coord (minx, miny), Coord (maxx, maxy))
+
+/// Returns (smallest, largest)
+let figureBoundingBox (figure: Figure) =
+    let xs = figure.Vertices |> Array.map (fun c -> c.X)
+    let ys = figure.Vertices |> Array.map (fun c -> c.Y)
+    let minx = xs |> Array.min
+    let miny = ys |> Array.min
+    let maxx = xs |> Array.max
+    let maxy = ys |> Array.max
+    (Coord (minx, miny), Coord (maxx, maxy))
