@@ -75,7 +75,7 @@ module MVU =
 
     type Msg =
         | Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | SelectTool of Tool
-        | Select of Avalonia.Point
+        | Select of Avalonia.Point | SelectAll | DeselectAll
         | CanvasPressed of Avalonia.Point
         | CanvasReleased of Avalonia.Point
         | CanvasMoved of Avalonia.Point
@@ -139,6 +139,10 @@ module MVU =
                     { state with Selection = List.filter (fun i -> i <> index) state.Selection }, Cmd.none
                 else
                     { state with Selection = (index::state.Selection) |> Seq.distinct |> List.ofSeq }, Cmd.none
+        | SelectAll ->
+            { state with Selection = Array.mapi (fun i _ -> i) state.History.[state.Index].Vertices |> List.ofSeq }, Cmd.none
+        | DeselectAll ->
+            { state with Selection = [] }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             { state with InProgress = Some ((x, y), (x, y)) }, Cmd.none
@@ -246,6 +250,14 @@ module MVU =
                             RadioButton.content "Rotate"
                             RadioButton.isChecked (state.Tool == Rotate)
                             RadioButton.onChecked (fun _ -> dispatch (SelectTool Rotate))
+                        ]
+                        Button.create [
+                            Button.content "Select all"
+                            Button.onClick (fun _ -> dispatch SelectAll)
+                        ]
+                        Button.create [
+                            Button.content "Deselect all"
+                            Button.onClick (fun _ -> dispatch DeselectAll)
                         ]
                     ]
                 ]
