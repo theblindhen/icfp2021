@@ -33,13 +33,3 @@ let stepSolver (problem: Model.Problem) =
             (Penalty.penaltyEdgeLengthSqSum problem result)
             (outsideHolePenalty result)
         result
-
-let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
-    let dist (coord: Model.Coord) =
-        let dx, dy = abs (coord.X - c.X), abs (coord.Y - c.Y)
-        dx+dy
-    let nearestPoint = Array.minBy dist figure.Vertices
-    if dist nearestPoint < 5 then
-        Array.tryFindIndex (fun c -> c = nearestPoint) figure.Vertices
-    else None
-

@@ -130,9 +130,11 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
-        // TODO: Refactor to save a sqrt
         if vectorsAreParallel startDiff v1 then
-            Some (Overlap (-float(p1.X - p2.X)/v1.X, -float(p1.X - q2.X)/v1.X))
+            if not (isZero v1.X) then
+                Some (Overlap (-float(p1.X - p2.X)/v1.X, -float(p1.X - q2.X)/v1.X))
+            else
+                Some (Overlap (-float(p1.Y - p2.Y)/v1.Y, -float(p1.Y - q2.Y)/v1.Y))
         else
             None
 

@@ -96,6 +96,13 @@ type GeometryIntersectTestClass () =
         let expected = Some (Overlap (-4.0, -5.0))
         Assert.AreEqual(expected, segmentsIntersect seg1 seg2)       
 
+     [<TestMethod>]
+     member this.TestSegmentIntersectOverlap5 () =
+        let seg1 = seg (0,-1) (0,3)
+        let seg2 = seg (0,0) (0,1)
+        let expected = Some (Overlap (0.25, 0.5))
+        Assert.AreEqual(expected, segmentsIntersect seg1 seg2)       
+
     [<TestMethod>]
     member this.TestSegmentsIntersectPoint1 () =
         let seg1 = (Coord (0, 0), Coord (2, 2))
@@ -314,6 +321,28 @@ type GeometryDecomposeTestClass () =
             seg (6,5) (6,1)
             seg (6,1) (1,1)
         ]
+    let bigbox =
+        [ 
+            seg (0,0) (0,3)
+            seg (0,3) (3,3)
+            seg (3,3) (3,0)
+            seg (3,0) (0,0)
+        ]
+    let stairs =
+        [
+            seg (0,0) (1,1)
+            seg (1,1) (3,1)
+            seg (3,1) (5,3)
+            seg (5,3) (5,0)
+            seg (5,0) (0,0)
+        ]
+    let saddle =
+        [
+            seg (0,0) (1,1)
+            seg (1,1) (4,1)
+            seg (4,1) (5,0)
+            seg (5,0) (0,0)
+        ]
 
     [<TestMethod>]
     member this.TestSegmentDecomposeOverlap1 () =
@@ -369,13 +398,80 @@ type GeometryDecomposeTestClass () =
      [<TestMethod>]
      member this.TestSegmentDecomposeOverlap6 () =
         let s1 = seg (6,6) (0,-3)
-
         let expected =
             [
                 DecOverlap (1.0/3.0, 2.0/3.0)            
                 DecPoint (1.0/3.0, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon3)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap7 () =
+        let s1 = seg (0,1) (4,1)
+        let expected =
+            [
+                DecOverlap (0.25, 0.75)            
+                DecPoint (0.75, Cross)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 stairs)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap8 () =
+        let s1 = seg (1,1) (4,1)
+        let expected =
+            [
+                DecOverlap (0., 2./3.)            
+                DecPoint (2./3., Cross)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 stairs)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap9 () =
+        let s1 = seg (2,1) (4,1)
+        let expected =
+            [
+                DecOverlap (0., 0.5)            
+                DecPoint (0.5, Cross)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 stairs)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap10 () =
+        let s1 = seg (0,1) (3,1)
+        let expected =
+            [
+                DecOverlap (1./3., 1.)            
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 saddle)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap11 () =
+        let s1 = seg (1,1) (4,1)
+        let expected =
+            [
+                DecOverlap (0., 1.)            
+                DecPoint (1., Touch)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 saddle)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap12 () =
+        let s1 = seg (2,1) (4,1)
+        let expected =
+            [
+                DecOverlap (0., 1.)            
+                DecPoint (1., Touch)
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 saddle)
+ 
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlap13 () =
+        let s1 = seg (2,1) (3,1)
+        let expected =
+            [
+                DecOverlap (0., 1.0)            
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 saddle)
 
      [<TestMethod>]
      member this.TestSegmentDecomposeOverlapMultiple1 () =
@@ -400,6 +496,21 @@ type GeometryDecomposeTestClass () =
                 DecPoint (0.6, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon4)
+
+     [<TestMethod>]
+     member this.TestSegmentDecomposeOverlapMultiple3 () =
+        let s1 = seg (0,-1) (0,3)
+        let tria = [ seg (0,0) (0,1)
+                     seg (0,1) (0,2)
+                     seg (0,2) (1,2)
+                     seg (1,2) (0,0) ]
+        let expected =
+            [
+                DecOverlap (0.25, 0.5)            
+                DecOverlap (0.5, 0.75)            
+                DecPoint (0.75, Touch)            
+            ]
+        Assert.AreEqual(expected, segmentDecomposition s1 tria)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeCrossPoint1 () =
@@ -440,6 +551,18 @@ type GeometryDecomposeTestClass () =
                 DecPoint (0.4, Cross)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeCrossPoint5 () =
+        let s1 = seg (-2,-2) (2,2)
+        let expected = [ DecPoint (0.5, Cross) ]
+        Assert.AreEqual(expected, segmentDecomposition s1 bigbox)
+
+    [<TestMethod>]
+    member this.TestSegmentDecomposeCrossPoint6 () =
+        let s1 = seg (0,-2) (2,2)
+        let expected = [ DecPoint (0.5, Cross) ]
+        Assert.AreEqual(expected, segmentDecomposition s1 bigbox)
 
     [<TestMethod>]
     member this.TestSegmentDecomposeTouchPoint1 () =

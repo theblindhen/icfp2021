@@ -23,12 +23,6 @@ type SegmentOutsideHoleTestClass () =
         seg (2, 2) (3, 1);
         seg (3, 1) (2, 0);
     ]
-    let testHole2 = [
-        seg (2, 0) (1, 1);
-        seg (1, 1) (2, 2);
-        seg (2, 2) (3, 1);
-        seg (3, 1) (2, 0);
-    ]
     let testHole3 = [
         seg (-2,6) (2,0)
         seg (2,0) (4,3)
@@ -83,37 +77,57 @@ type SegmentOutsideHoleTestClass () =
     [<TestMethod>]
     member this.TestSegmentOutsideHole1 () = 
         let segment = seg (2,2) (3,3) 
-        Assert.AreEqual(0.0, segmentOutsideHole testHole1 segment)
+        Assert.AreEqual(0.0, segmentOutsideHole testHole1 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole2 () = 
         let segment = seg (2,2) (4,4) 
-        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment)
+        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole3 () = 
         let segment = seg (0,0) (4,4) 
-        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment)
+        Assert.AreEqual(0.5, segmentOutsideHole testHole1 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole4 () = 
         let segment = seg (0,2) (8,2) 
-        Assert.AreEqual(0.25, segmentOutsideHole testHole1 segment)
+        Assert.AreEqual(0.75, segmentOutsideHole testHole1 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole5 () = 
         let segment = seg (2,0) (1,1) 
-        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment)
+        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole6 () = 
         let segment = seg (1,1) (2,0)
-        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment)
+        Assert.AreEqual(0.0, segmentOutsideHole testHole2 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSegmentOutsideHole7 () = 
+        let segment = seg (0,-3) (4,3)
+        Assert.AreEqual(0.5, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole8 () = 
+        let segment = seg (0,-3) (6,6)
+        Assert.AreEqual(2.0/3.0, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole9 () = 
         let segment = seg (0,-3) (10,12)
-        Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment)
+        Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole10 () = 
+        let segment = seg (-1,-2) (9,13)
+        Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole11 () = 
+        let segment = seg (-2,2) (8,17)
+        Assert.AreEqual(0.4, segmentOutsideHole testHole3 segment, EPSILON)
 
     [<TestMethod>]
     member this.TestSortSegments () =
