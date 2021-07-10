@@ -111,7 +111,7 @@ let holeAsPath (problem: Problem) =
     path.Close()
     path
 
-let outsideHolePenalty (problem: Problem): Figure -> float =
+let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
     let hole = holeAsPath problem
     fun figure ->
         figure.Vertices
@@ -119,3 +119,21 @@ let outsideHolePenalty (problem: Problem): Figure -> float =
         |> Array.sumBy (fun (c: Coord) ->
                 segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) problem.Hole))
         |> float
+
+let outsideHoleSegmentPenalty (problem: Problem): Figure -> float =
+    let hole = holeAsPath problem
+    let contains (c: Coord) = hole.Contains (float32 c.X, float32 c.Y)
+    let holeSegments = Model.holeSegments problem
+    fun figure ->
+        figure.Edges
+        |> Array.sumBy (fun (s, t) ->
+            let sc, tc = figure.Vertices.[s], figure.Vertices.[t]
+            if contains sc && contains tc && segmentIntersectionList (sc, tc) holeSegments <> [] then
+                segmentLengthSq (sc, tc) |> float
+            else 0.0)
+
+let outsideHolePenalty (problem: Problem): Figure -> float =
+    let endpointPenalty = outsideHoleEndpointPenalty problem
+    let segmentPenalty = outsideHoleSegmentPenalty problem
+    fun figure ->
+        endpointPenalty figure + segmentPenalty figure
