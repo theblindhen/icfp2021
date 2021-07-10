@@ -72,11 +72,11 @@ let isCoordInsideHole holeSegments coord =
                 true
             else
                 iter (if typ = Cross then not isInside else isInside) decomTl
-        | DecOverlap (_,b, typ) :: decomTl ->
+        | DecOverlap (_,b) :: decomTl ->
             if isOne b then
                 true
             else
-                iter (if typ = Cross then not isInside else isInside) decomTl
+                iter isInside decomTl
         | [] -> isInside
     iter false decoms
 
@@ -89,8 +89,7 @@ let segmentOutsideHole holeSegments (a,b) =
             let acc = if isInside then acc else acc + a - last
             iter (not isInside, (if isInside then acc else acc + a - last), a) decomTl
         | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, last) decomTl
-        | DecOverlap (a,b, typ) :: decomTl -> 
-            //TODO: Handle typ
+        | DecOverlap (a,b) :: decomTl -> 
             let accUpd = if isInside then acc else acc + a - last
             let lastUpd = if isInside then b else last
             iter (not isInside, acc, lastUpd) decomTl            
