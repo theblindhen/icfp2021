@@ -116,7 +116,7 @@ module MVU =
                             Button.content ">>"
                         ]
                         Button.create [
-                            Button.onClick (fun _ -> dispatch (Backward 109))
+                            Button.onClick (fun _ -> dispatch (Backward 100))
                             Button.content "<<<"
                         ]
                         Button.create [
