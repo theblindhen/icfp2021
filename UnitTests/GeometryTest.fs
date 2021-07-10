@@ -331,7 +331,7 @@ type GeometryDecomposeTestClass () =
         let expected =
             [
                 DecOverlap (0.0, 0.25)                
-                DecPoint (0.25, Touch)
+                DecPoint (0.0, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
@@ -341,7 +341,7 @@ type GeometryDecomposeTestClass () =
         let expected =
             [
                 DecOverlap (0.2, 0.4)
-                DecPoint (0.4, Touch)
+                DecPoint (0.2, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon1)
 
@@ -351,7 +351,7 @@ type GeometryDecomposeTestClass () =
         let expected =
             [
                 DecOverlap (0.2, 0.4)
-                DecPoint (0.4, Touch)
+                DecPoint (0.2, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon2)
 
@@ -372,7 +372,7 @@ type GeometryDecomposeTestClass () =
         let expected =
             [
                 DecOverlap (1.0/3.0, 2.0/3.0)            
-                DecPoint (2.0/3.0, Touch)
+                DecPoint (1.0/3.0, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon3)
 
@@ -394,9 +394,9 @@ type GeometryDecomposeTestClass () =
         let expected =
             [
                 DecOverlap (0.2, 0.4)            
-                DecPoint (0.4, Touch)
+                DecPoint (0.2, Touch)
                 DecOverlap (0.6, 0.8)       
-                DecPoint (0.8, Touch)
+                DecPoint (0.6, Touch)
             ]
         Assert.AreEqual(expected, segmentDecomposition s1 simplePolygon4)
 

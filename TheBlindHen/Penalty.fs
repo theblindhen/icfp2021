@@ -102,31 +102,6 @@ let penaltyOutsideHole (problem: Problem) =
     |> List.map (fun seg -> (seg, segmentOutsideHole hole seg))
     |> List.sumBy (fun (seg, ratio) -> ratio * (sqrt (float (segmentLengthSq seg))))
 
-let rasterizeHole (problem: Problem) =
-    // TODO: bitmap, not full color
-    // TODO: pick the right resolution
-    let info = SkiaSharp.SKImageInfo(400, 400)
-    use surface = SkiaSharp.SKSurface.Create(info)
-    let canvas = surface.Canvas
-    canvas.Clear(SkiaSharp.SKColors.White)
-    use paint =
-        new SkiaSharp.SKPaint(
-            IsAntialias = false,
-            Color = SkiaSharp.SKColors.Black,
-            StrokeJoin = SkiaSharp.SKStrokeJoin.Round, // TODO: right choice?
-            StrokeCap = SkiaSharp.SKStrokeCap.Round) // TODO: right choice?
-    let path = new SkiaSharp.SKPath()
-    let points = problem.Hole
-    path.MoveTo(float32 points.[0].X, float32 points.[0].Y)
-    for i in 1 .. points.Length - 1 do
-        path.LineTo(float32 points.[i].X, float32 points.[i].Y)
-    path.Close()
-    // TODO: Make sure we fill with black. Is that the default behavior?
-    // https://skia.org/docs/user/api/skpath_overview/
-    canvas.DrawPath(path, paint)
-    // TODO: conservative fill, maybe retracting by 1 pixel
-    // TODO: return a bitmap of some sort
-
 let holeAsPath (problem: Problem) =
     let path = new SkiaSharp.SKPath()
     let points = problem.Hole

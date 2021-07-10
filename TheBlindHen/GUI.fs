@@ -14,38 +14,6 @@ let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
 let solutionPath: string option ref = ref None
 
-let rnd = Random(int(DateTime.Now.Ticks))
-
-let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
-    let square x = x * x
-    figure.Vertices
-    |> Array.sumBy (fun xy ->
-        square (max 0 (minCorner.X - xy.X)) +
-        square (max 0 (xy.X - maxCorner.X)) +
-        square (max 0 (minCorner.Y - xy.Y)) +
-        square (max 0 (xy.Y - maxCorner.Y)))
-    |> float
-
-let figurePenalty (problem: Model.Problem) =
-    let outsideHolePenalty = Penalty.outsideHolePenalty problem
-    fun figure ->
-        Penalty.penaltyEdgeLengthSqSum problem figure +
-        outsideHolePenalty figure
-
-let stepSolver (problem: Model.Problem) =
-    let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let getNeighbor = Neighbors.balancedCollectionOfNeighbors
-    let penalty = figurePenalty problem
-    let outsideHolePenalty = Penalty.outsideHolePenalty problem
-    let step = SimulatedAnnealing.simpleSimulatedAnnealing penalty getNeighbor 100_000 rnd ()
-    fun figure ->
-        let result = Option.defaultValue figure (step figure)
-        // TODO: this is just debug printing
-        printfn "penalty = %f + %f"
-            (Penalty.penaltyEdgeLengthSqSum problem result)
-            (outsideHolePenalty result)
-        result
-
 let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
         let dx, dy = abs (coord.X - c.X), abs (coord.Y - c.Y)
@@ -95,7 +63,9 @@ module MVU =
             InProgress = None
             Origo = Model.Coord (0, 0)
         },
-        Cmd.OfFunc.attempt (fun problem -> stepperGlobalVar := Some (stepSolver problem)) problem (fun _ -> Id)
+        Cmd.OfFunc.attempt (fun problem ->
+                stepperGlobalVar := Some (FitInHole.stepSolver problem)
+            ) problem (fun _ -> Id)
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
@@ -130,7 +100,8 @@ module MVU =
                     match !solutionPath with
                     | None -> ()
                     | Some path ->
-                        let postfix = rnd.Next(999999)
+                        // TODO: move this outside the GUI
+                        let postfix = FitInHole.rnd.Next(999999)
                         let solutionFile = sprintf "%s%6d" path postfix
                         Directory.CreateDirectory path |> ignore
                         printfn "Wrote solution to %s" solutionFile
@@ -273,7 +244,7 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem shownFigure}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {FitInHole.figurePenalty state.Problem shownFigure}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
