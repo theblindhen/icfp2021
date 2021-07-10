@@ -19,11 +19,7 @@ let main args =
         printfn "No input file given"
         1
     | Some inputFile ->
-        let problem = Model.parseFile inputFile
-        printfn "%A" problem
-        let solution = solutionOfFigure problem.Figure
-        printfn $"Solution:\n{Model.deparseSolution solution}"
         if !gui then
-            GUI.showGui problem
+            GUI.showGui inputFile
         else
             0
