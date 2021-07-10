@@ -50,6 +50,7 @@ let findNearbyCoord x y (figure: Model.Figure) =
 
 module MVU =
     open Elmish
+    open System.IO
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
@@ -69,7 +70,7 @@ module MVU =
         Tool: Tool
     }
 
-    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+    type Msg = Id | Forward of int | Backward of int | Reset | Save | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
 
     let init (problem: Model.Problem): State * Cmd<Msg>=
         {
@@ -93,6 +94,7 @@ module MVU =
 
     let update (msg: Msg) (state: State): (State * Cmd<Msg>) =
         match msg with
+        | Id -> state, Cmd.none
         | Forward steps ->
             let newIndex = state.Index + steps
             let stepper = Option.get !stepperGlobalVar
@@ -102,6 +104,12 @@ module MVU =
             { state with Index = newIndex }, Cmd.none
         | Backward steps -> { state with Index = max 0 (state.Index - steps) }, Cmd.none
         | Reset -> { state with Index = 0 }, Cmd.none
+        | Save -> 
+            state, 
+            Cmd.OfFunc.attempt 
+                (fun s -> File.WriteAllText("solution", Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
+                state
+                (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
         | CanvasPressed p ->
@@ -137,8 +145,13 @@ module MVU =
                 Button.create [
                     Button.dock Dock.Bottom
                     Button.onClick (fun _ -> dispatch Reset)
-                    Button.content "reset"
-                ]                
+                    Button.content "Reset"
+                ]
+                Button.create [
+                    Button.dock Dock.Bottom
+                    Button.onClick (fun _ -> dispatch Save)
+                    Button.content "Save"
+                ]
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
                     UniformGrid.columns 2
@@ -297,7 +310,12 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui problem =
+let showGui inputFile =
+        let problem = Model.parseFile inputFile
+        printfn "%A" problem
+        let solution = Model.solutionOfFigure problem.Figure
+        printfn $"Solution:\n{Model.deparseSolution solution}"
+
         problemGlobalVar := Some problem 
         stepperGlobalVar := Some (stepSolver problem)
         AppBuilder
