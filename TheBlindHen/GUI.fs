@@ -49,6 +49,7 @@ let findNearbyCoord x y (figure: Model.Figure) =
     else None
 
 module MVU =
+    open Elmish
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
@@ -68,7 +69,9 @@ module MVU =
         Tool: Tool
     }
 
-    let init (problem: Model.Problem) =
+    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+
+    let init (problem: Model.Problem): State * Cmd<Msg>=
         {
             Problem = problem
             History = ResizeArray([problem.Figure])
@@ -77,9 +80,7 @@ module MVU =
             SelectedCoords = []
             MoveFrom = None
             Tool = Select
-        }
-
-    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+        }, Cmd.none
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
@@ -90,7 +91,7 @@ module MVU =
             { state with Index = state.Index + 1 }
         else state
 
-    let update (msg: Msg) (state: State) : State =
+    let update (msg: Msg) (state: State): (State * Cmd<Msg>) =
         match msg with
         | Forward steps ->
             let newIndex = state.Index + steps
@@ -98,36 +99,36 @@ module MVU =
             while newIndex >= state.History.Count do
                 let lastState = state.History.[state.History.Count - 1]
                 state.History.Add (stepper lastState)
-            { state with Index = newIndex }
-        | Backward steps -> { state with Index = max 0 (state.Index - steps) }
-        | Reset -> { state with Index = 0 }
-        | ZoomIn -> { state with Scale = state.Scale * 1.50 }
-        | ZoomOut -> { state with Scale = state.Scale / 1.50 }
+            { state with Index = newIndex }, Cmd.none
+        | Backward steps -> { state with Index = max 0 (state.Index - steps) }, Cmd.none
+        | Reset -> { state with Index = 0 }, Cmd.none
+        | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
+        | ZoomOut -> { state with Scale = state.Scale / 1.50 }, Cmd.none
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
             match state.Tool with
             | Select ->
                 let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
                 match selectedCoordIndex with
-                | None -> state
-                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }
+                | None -> state, Cmd.none
+                | Some index -> { state with SelectedCoords = (index::state.SelectedCoords) |> Seq.distinct |> List.ofSeq }, Cmd.none
             | Deselect ->
                 let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
                 match selectedCoordIndex with
-                | None -> state
-                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }
+                | None -> state, Cmd.none
+                | Some index -> { state with SelectedCoords = List.filter (fun i -> i <> index) state.SelectedCoords }, Cmd.none
             | Move ->
-                { state with MoveFrom = Some (x, y) }
+                { state with MoveFrom = Some (x, y) }, Cmd.none
             | Rotate ->
-                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state
+                applyIfLast (Transformations.rotateSelectedVerticiesAround state.SelectedCoords (x, y)) state, Cmd.none
         | CanvasReleased p ->
             match state.Tool, state.MoveFrom with
             | Move, Some (x1, y1) ->
                 let x2, y2 = int(p.X / state.Scale), int(p.Y / state.Scale)
                 let dx, dy = x2 - x1, y2 - y1
-                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state
-            | _ -> state
-        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }
+                applyIfLast (Transformations.translateSelectedVerticies state.SelectedCoords (dx, dy)) state, Cmd.none
+            | _ -> state, Cmd.none
+        | SelectTool tool -> { state with Tool = tool; MoveFrom = None }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
@@ -279,7 +280,7 @@ type MainWindow() as this =
 
         let problem = Option.get !problemGlobalVar
 
-        Elmish.Program.mkSimple MVU.init MVU.update MVU.view
+        Program.mkProgram MVU.init MVU.update MVU.view
         |> Program.withHost this
         |> Program.runWith problem
 
