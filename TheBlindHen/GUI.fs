@@ -162,6 +162,7 @@ module MVU =
                 Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure
             | _ -> figure
         let vs = shownFigure.Vertices
+        let holeSegments = Model.holeSegments state.Problem
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -265,11 +266,13 @@ module MVU =
                             figure.Edges
                             |> Array.toList
                             |> List.map (fun (s,t) ->
+                                let sc, tc = vs.[s], vs.[t]
+                                let crossesHolePath = Geometry.segmentIntersectionList (sc, tc) holeSegments <> []
                                 Line.create [
-                                    Line.startPoint (float vs.[s].X * scale, float vs.[s].Y * scale)
-                                    Line.endPoint (float vs.[t].X * scale, float vs.[t].Y * scale)
+                                    Line.startPoint (float sc.X * scale, float sc.Y * scale)
+                                    Line.endPoint (float tc.X * scale, float tc.Y * scale)
                                     Line.strokeThickness 2.0
-                                    Line.stroke "#e74c3c"
+                                    Line.stroke (if crossesHolePath then "#e74c3c" else "#00FF00")
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         ) @
