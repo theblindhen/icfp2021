@@ -268,12 +268,16 @@ module MVU =
                             |> Array.toList
                             |> List.map (fun (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
-                                let outsideHole = segmentOutsideHole (sc, tc) > Geometry.EPSILON
+                                let outsideHolePenalty = segmentOutsideHole (sc, tc)
+                                let color =
+                                    if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
+                                    else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
+                                    else "#00FF00"
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)
                                     Line.strokeThickness 2.0
-                                    Line.stroke (if outsideHole then "#e74c3c" else "#00FF00")
+                                    Line.stroke color
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         ) @
