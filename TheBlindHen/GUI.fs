@@ -175,15 +175,16 @@ module MVU =
     let view (state: State) (dispatch) =
         let scale = state.Scale
         let figure = state.History.[state.Index]
-        let vs =
+        let shownFigure =
             match state.Tool, state.InProgress with
             | Move, Some ((x1, y1), (x2, y2)) ->
                 let (dx, dy) = (x2 - x1, y2 - y1)
-                (Transformations.translateSelectedVerticies state.Selection (dx, dy) figure).Vertices
+                Transformations.translateSelectedVerticies state.Selection (dx, dy) figure
             | Rotate, Some ((x1, y1), (x2, y2)) ->
                 let dy = y2 - y1
-                (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure).Vertices
-            | _ -> figure.Vertices
+                Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure
+            | _ -> figure
+        let vs = shownFigure.Vertices
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -266,7 +267,7 @@ module MVU =
                 ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
-                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem state.History.[state.Index]}")
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem shownFigure}")
                 ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
