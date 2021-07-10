@@ -70,6 +70,11 @@ let copyFigure (f: Figure): Figure =
         Vertices = Array.copy f.Vertices
     }
 
+let mapFigureVerticies (f : Coord -> Coord) (fig: Figure): Figure =
+    {
+        Edges = Array.copy fig.Edges
+        Vertices = Array.map f fig.Vertices
+    }
 
 let copySolution (s: Solution): Solution =
     {

@@ -131,6 +131,10 @@ module MVU =
                         ]
                     ]
                 ]
+                TextBox.create [
+                    TextBox.dock Dock.Bottom
+                    TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem state.History.[state.Index]}")
+                ]
                 Canvas.create [
                     Canvas.background "#2c3e50"
                     Canvas.onPointerPressed (fun evt ->
