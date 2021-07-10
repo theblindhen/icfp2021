@@ -84,11 +84,12 @@ let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
     else
         let sX = target.X * row2.Y - target.Y * row2.X
         let sY = target.X * row1.Y - target.Y * row1.X
-        Some (Vector (sX/d, sY/d))
+        Some (Vector (sX/d, sY/d), d)
         
+type Direction = CW | CCW
 type SegmentIntersect = 
       /// Multiplier on base segment to get the intersection point
-    | Point of float
+    | Point of float * Direction
       /// Multipliers on base segment for start/end of the overlap
     | Overlap of float * float
 
@@ -99,7 +100,7 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some sol -> Some (Point (-sol.X))
+    | Some (sol, det) -> Some (Point (-sol.X, if det < 0. then CCW else CW))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
@@ -119,32 +120,40 @@ let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : Segmen
                     max a 0., min b 1.
                 else
                     max b 0., min a 1.
-            if abs(a - b) < EPSILON then
-                Point a // TODO: Test for this case
-            else
-                Overlap (a, b)
+            Overlap (a, b)
         | ints -> ints)
     |> List.filter (function
-        | Point a -> a >= 0. && a <= 1.
+        | Point (a,_) -> a >= 0. && a <= 1.
         | Overlap (a,b) -> a <= 1. && b >= 0. ) 
 
-let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : SegmentIntersect list =
+type Decomposition =
+    | TouchPoint of float
+    | CrossPoint of float
+    | Aligned of float * float
+
+let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
     let intersections = segmentIntersectionList seg simplePolygon
     let overlapEndpoints : HashSet<int> =
         intersections
         |> List.collect (function
+                            // TODO: These numbers should be scaled by seg.Length
                          | Overlap (a,b) -> [ int (round a); int (round b) ]
                          | _ -> [])
         |> HashSet.ofList
     intersections
     |> List.filter (function
         | Overlap _ -> true
-        | Point a ->
+        | Point (a,_) ->
+            // TODO: These numbers should be scaled by seg.Length
             not (HashSet.contains (int (round a)) overlapEndpoints))
-    |> List.sortBy (fun ints ->
-        match ints with
-        | Point a -> a
-        | Overlap (a,_) -> a)
+    |> List.map (function
+        | Overlap (a, b) -> Aligned (a,b)
+        | Point (a, _) -> CrossPoint (a) // TODO: Wrong
+        )
+    |> List.sortBy (function
+        | TouchPoint a -> a
+        | CrossPoint a -> a
+        | Aligned (a,_) -> a)
 
 
 // /// A structure for precomputed set of points in the hole
