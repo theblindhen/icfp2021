@@ -34,11 +34,12 @@ let figurePenalty (problem: Model.Problem) =
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
-    let getNeighbor = Neighbors.balancedCollectionOfNeighbors rnd
+    let getNeighbor = Neighbors.balancedCollectionOfNeighbors
     let penalty = figurePenalty problem
     let bb = Model.holeBoundingBox problem
+    let step = SimulatedAnnealing.simpleSimulatedAnnealing penalty getNeighbor 10_000 rnd ()
     fun figure ->
-        let result = Hillclimber.step getNeighbor penalty figure
+        let result = Option.defaultValue figure (step figure)
         // TODO: this is just debug printing
         printfn "penalty = %f + %f"
             (Penalty.penaltyEdgeLengthSqSum problem result)
