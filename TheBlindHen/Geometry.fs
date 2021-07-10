@@ -131,25 +131,52 @@ type Decomposition =
     | CrossPoint of float
     | Aligned of float * float
 
+/// Decompose a segment according to its intersection with a simple polygon
+/// This assumes that the simplePolygon's segments are given in order, i.e. that
+/// a segment's end point is always the next segment's starting point 
 let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decomposition list =
+    // Get the ordered list of intersections
     let intersections = segmentIntersectionList seg simplePolygon
-    let overlapEndpoints : HashSet<int> =
-        intersections
-        |> List.collect (function
-                            // TODO: These numbers should be scaled by seg.Length
-                         | Overlap (a,b) -> [ int (round a); int (round b) ]
-                         | _ -> [])
-        |> HashSet.ofList
-    intersections
-    |> List.filter (function
-        | Overlap _ -> true
-        | Point (a,_) ->
-            // TODO: These numbers should be scaled by seg.Length
-            not (HashSet.contains (int (round a)) overlapEndpoints))
-    |> List.map (function
-        | Overlap (a, b) -> Aligned (a,b)
-        | Point (a, _) -> CrossPoint (a) // TODO: Wrong
-        )
+                        |> Array.ofList
+    // Pass over intersections and create the decompositions
+    let decomps = ref []
+    let skipNext = ref false
+    for i in 0 .. intersections.Length - 1 do
+        if !skipNext then
+            skipNext := false
+        else
+            let onew = ref None
+            match intersections.[i] with
+            | Point (a, adir) ->
+                let normalCase () =
+                    let next = if i < intersections.Length - 1 then i+1 else 0
+                    match intersections.[next] with
+                    | Point (b, bdir) ->
+                        if abs (a - b) < EPSILON then
+                            onew := (if adir = bdir then
+                                        Some (CrossPoint(a))
+                                     else
+                                        Some (TouchPoint(a)))
+                        else
+                            onew := Some (CrossPoint(a))
+                    | Overlap (b1, b2) -> () // Will be added in iter next
+                // Corner case: Last intersection is an overlap that ends here,
+                // then we don't add a Point now.
+                if i = 0 then
+                    match intersections.[intersections.Length - 1] with
+                    | Overlap (b1, b2) ->
+                        if abs (a - b2) < EPSILON then
+                            () // Separate line for emphasis
+                        else
+                            normalCase ()
+                    | _ -> normalCase ()
+                else
+                    normalCase ()
+            | Overlap (a, b) ->
+                onew := Some (Aligned (a,b))
+                skipNext := true // Skip the Point that must follow this Overlap
+    // Sort the decompositions by intersection point
+    !decomps
     |> List.sortBy (function
         | TouchPoint a -> a
         | CrossPoint a -> a
