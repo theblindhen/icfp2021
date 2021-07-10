@@ -120,6 +120,16 @@ type SegmentOutsideHoleTestClass () =
         Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment, EPSILON)
 
     [<TestMethod>]
+    member this.TestSegmentOutsideHole10 () = 
+        let segment = seg (-1,-2) (9,13)
+        Assert.AreEqual(0.6, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole11 () = 
+        let segment = seg (-2,2) (8,17)
+        Assert.AreEqual(0.4, segmentOutsideHole testHole3 segment, EPSILON)
+
+    [<TestMethod>]
     member this.TestSortSegments () =
         let segments =
             [
