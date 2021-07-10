@@ -109,8 +109,8 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
         else
             None
 
-let segmentDecomposition (seg: Segment) (polygon: Segment list) : SegmentIntersect list =
-    polygon
+let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : SegmentIntersect list =
+    intersectors 
     |> List.choose (segmentsIntersect seg)
     |> List.map (fun ints ->
         match ints with
@@ -129,7 +129,9 @@ let segmentDecomposition (seg: Segment) (polygon: Segment list) : SegmentInterse
         match ints with
         | Point a -> a >= 0. && a <= 1.
         | Overlap (a,b) -> a <= 1. && b >= 0. ) 
+
+let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : SegmentIntersect list =
+    segmentIntersectionList seg simplePolygon
     |> List.sortBy (fun ints ->
         match ints with
         | Point a -> a
-        | Overlap (a,_) -> a)
