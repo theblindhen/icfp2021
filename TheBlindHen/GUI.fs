@@ -35,12 +35,15 @@ module MVU =
     open Avalonia.VisualTree
     open Avalonia.Controls.Shapes
 
+    type Tool = Move | Rotate
+
     type State = {
         Problem: Model.Problem
         History: ResizeArray<Model.Figure>
         Index: int // position in History
         Scale: float
         SelectedCoordIndex: int option
+        Tool: Tool
     }
 
     let init (problem: Model.Problem) =
@@ -53,9 +56,19 @@ module MVU =
             Index = 0
             Scale = 2.0
             SelectedCoordIndex = None
+            Tool = Move
         }
 
-    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point
+    type Msg = Forward of int | Backward of int | Reset | ZoomIn | ZoomOut | CanvasPressed of Avalonia.Point | CanvasReleased of Avalonia.Point | SelectTool of Tool
+
+    // adds a new figure based on the current figure, if the current figure
+    // is the last figure in the history
+    let applyIfLast (f: Model.Figure -> Model.Figure) (state: State): State =
+        if state.Index = state.History.Count - 1 then
+            let newFig = f state.History.[state.Index]
+            state.History.Add (newFig)
+            { state with SelectedCoordIndex = None; Index = state.Index + 1 }
+        else state
 
     let update (msg: Msg) (state: State) : State =
         match msg with
@@ -72,17 +85,22 @@ module MVU =
         | ZoomOut -> { state with Scale = state.Scale / 1.50 }
         | CanvasPressed p ->
             let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-            let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
-            { state with SelectedCoordIndex = selectedCoordIndex }
+            match state.Tool with
+            | Move -> 
+                let selectedCoordIndex = findNearbyCoord x y state.History.[state.Index]
+                { state with SelectedCoordIndex = selectedCoordIndex }
+            | Rotate ->
+                applyIfLast (Transformations.rotateVerticiesAround (x, y)) state
         | CanvasReleased p ->
-            match state.SelectedCoordIndex, state.Index = state.History.Count - 1 with
-            | Some selected, true ->
+            match state.SelectedCoordIndex with
+            | Some selected ->
                 let x, y = int(p.X / state.Scale), int(p.Y / state.Scale)
-                let newFigure = Model.copyFigure state.History.[state.Index]
-                newFigure.Vertices.[selected] <- Model.Coord(x, y)
-                state.History.Add (newFigure)
-                { state with SelectedCoordIndex = None; Index = state.Index + 1 }
+                applyIfLast (fun fig ->
+                    let newFig = Model.copyFigure fig
+                    newFig.Vertices.[selected] <- Model.Coord(x, y)
+                    newFig) state
             | _ -> state
+        | SelectTool tool -> { state with Tool = tool }
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
@@ -131,6 +149,22 @@ module MVU =
                         ]
                     ]
                 ]
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
+                        RadioButton.create [
+                            RadioButton.content "Move"
+                            RadioButton.isChecked (state.Tool == Move)
+                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Move))
+                        ]
+                        RadioButton.create [
+                            RadioButton.content "Rotate"
+                            RadioButton.isChecked (state.Tool == Rotate)
+                            RadioButton.onChecked (fun _ -> dispatch (SelectTool Rotate))
+                        ]
+                    ]
+                ]
                 TextBox.create [
                     TextBox.dock Dock.Bottom
                     TextBox.text (sprintf $"Step: {state.Index}, Cost: {figurePenalty state.Problem state.History.[state.Index]}")
@@ -138,9 +172,11 @@ module MVU =
                 Canvas.create [
                     Canvas.background "#2c3e50"
                     Canvas.onPointerPressed (fun evt ->
-                        dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
+                        if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
+                            dispatch (CanvasPressed (evt.GetPosition (evt.Source :?> IVisual))))
                     Canvas.onPointerReleased (fun evt ->
-                        dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
+                        if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
+                            dispatch (CanvasReleased (evt.GetPosition (evt.Source :?> IVisual))))
                     Canvas.children (
                         (
                             let figure = state.History.[state.Index]
