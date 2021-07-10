@@ -1,5 +1,6 @@
 module Penalty
 
+open Util
 open Model
 open Geometry
 
@@ -61,47 +62,51 @@ let penaltyEdgeRatioSum (problem: Problem) =
 //                 0.0)
 
 /// TODO: replace with getHolePoints
-let isCoordInsideHole holeSegments coord =
-    let segment = (Coord (-1,-1), coord)
-    let decoms = segmentDecomposition segment holeSegments
-    let (=~) x y = abs (x - y) < EPSILON
-    let rec iter isInside =
-        function
-        | DecPoint (a, typ) :: decomTl ->
-            if a =~ 1. then
-                true
-            else
-                iter (if typ = Cross then not isInside else isInside) decomTl
-        | DecOverlap (_,b) :: decomTl ->
-            if b =~ 1. then
-                true
-            else
-                iter isInside decomTl
-        | [] -> isInside
-    iter false decoms
+let isCoordInsideHole holeSegments =
+    memoize (fun coord ->
+        let segment = (Coord (-1,-1), coord)
+        let decoms = segmentDecomposition segment holeSegments
+        let (=~) x y = abs (x - y) < EPSILON
+        let rec iter isInside =
+            function
+            | DecPoint (a, typ) :: decomTl ->
+                if a =~ 1. then
+                    true
+                else
+                    iter (if typ = Cross then not isInside else isInside) decomTl
+            | DecOverlap (_,b) :: decomTl ->
+                if b =~ 1. then
+                    true
+                else
+                    iter isInside decomTl
+            | [] -> isInside
+        iter false decoms)
 
 /// returns the ratio of the sement that is outside the hole
-let segmentOutsideHole holeSegments (a,b) =
-    let decoms = segmentDecomposition (a,b) holeSegments
-    let rec iter (isInside, acc, lastCross) =
-        function
-        | DecPoint (a, Cross) :: decomTl -> 
-            let accUpd = if isInside then acc else acc + a - lastCross
-            let lastUpd = a
-            iter (not isInside, accUpd, lastUpd) decomTl
-        | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, lastCross) decomTl
-        | DecOverlap (a,b) :: decomTl -> 
-            let accUpd = if isInside then acc else acc + a - lastCross
-            let lastUpd = b
-            iter (isInside, accUpd, lastUpd) decomTl            
-        | [] -> if isInside then acc else acc + 1.0 - lastCross
-    iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
+let segmentOutsideHole holeSegments =
+    memoize (fun (a,b) ->
+        let decoms = segmentDecomposition (a,b) holeSegments
+        let rec iter (isInside, acc, lastCross) =
+            function
+            | DecPoint (a, Cross) :: decomTl -> 
+                let accUpd = if isInside then acc else acc + a - lastCross
+                let lastUpd = a
+                iter (not isInside, accUpd, lastUpd) decomTl
+            | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, lastCross) decomTl
+            | DecOverlap (a,b) :: decomTl -> 
+                let accUpd = if isInside then acc else acc + a - lastCross
+                let lastUpd = b
+                iter (isInside, accUpd, lastUpd) decomTl            
+            | [] -> if isInside then acc else acc + 1.0 - lastCross
+        iter (isCoordInsideHole holeSegments a, 0.0, 0.0) decoms
+        )
 
-let penaltyOutsideHole (problem: Problem) =
-    let hole = holeSegments problem
-    figureSegments problem.Figure
-    |> List.map (fun seg -> (seg, segmentOutsideHole hole seg))
-    |> List.sumBy (fun (seg, ratio) -> ratio * (sqrt (float (segmentLengthSq seg))))
+let penaltyEdgeRatioOutsideHole (problem: Problem) =
+    let segmentOutsideHole = segmentOutsideHole (holeSegments problem)
+    fun fig ->
+        figureSegments fig
+        |> List.map (fun seg -> (seg, segmentOutsideHole seg))
+        |> List.sumBy (fun (seg, ratio) -> ratio * float (segmentLengthSq seg))
 
 let holeAsPath (problem: Problem) =
     let path = new SkiaSharp.SKPath()
@@ -134,7 +139,8 @@ let outsideHoleSegmentPenalty (problem: Problem): Figure -> float =
             else 0.0)
 
 let outsideHolePenalty (problem: Problem): Figure -> float =
-    let endpointPenalty = outsideHoleEndpointPenalty problem
-    let segmentPenalty = outsideHoleSegmentPenalty problem
-    fun figure ->
-        endpointPenalty figure + segmentPenalty figure
+    let penalties = [ outsideHoleEndpointPenalty 
+                      // outsideHoleSegmentPenalty 
+                      penaltyEdgeRatioOutsideHole
+                    ] |> List.map (fun penalty -> penalty problem)
+    fun figure -> List.sumBy (fun penalty -> penalty figure) penalties
