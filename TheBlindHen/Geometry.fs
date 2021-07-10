@@ -85,29 +85,51 @@ let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
         let sX = target.X * row2.Y - target.Y * row2.X
         let sY = target.X * row1.Y - target.Y * row1.X
         Some (Vector (sX/d, sY/d))
+        
+type SegmentIntersect = 
+      /// Multiplier on base segment to get the intersection point
+    | Point of float
+      /// Multipliers on base segment for start/end of the overlap
+    | Overlap of float * float
 
-type SegmentIntersection =
-      /// Segments are parallel but not on the same line
-    | Parallel
-      /// Segments lie on the same line. Multipliers on segment 1 which defines the overlap
-    | Overlap of (float * float)  
-      /// Multiplier of first and second segment vector for point
-    | Point of float * float    
-
-let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersection =
+let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option =
     let v1 = vectorOfSegment seg1
     let v2 = vectorOfSegment seg2
     let p1,_ = seg1
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some sol -> Point (-sol.X, -sol.Y)
+    | Some sol -> Some (Point (-sol.X))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
         // TODO: Refactor to save a sqrt
         if vectorsAreParallel startDiff v1 then
-            Overlap (float(p1.X - p2.X)/v1.X, float(p1.X - q2.X)/v1.X)
+            Some (Overlap (float(p1.X - p2.X)/v1.X, float(p1.X - q2.X)/v1.X))
         else
-            Parallel
-        
+            None
+
+let segmentDecomposition (seg: Segment) (problem: Problem) : SegmentIntersect list =
+    holeSegments problem
+    |> List.choose (segmentsIntersect seg)
+    |> List.map (fun ints ->
+        match ints with
+        | Overlap (a,b) ->
+            let a, b = 
+                if a < b then
+                    max a 0., min b 1.
+                else
+                    max b 0., min a 1.
+            if abs(a - b) < EPSILON then
+                Point a // TODO: Test for this case
+            else
+                Overlap (a, b)
+        | _ -> ints)
+    |> List.filter (fun ints ->
+        match ints with
+        | Point a -> a >= 0. && a <= 1.
+        | Overlap (a,b) -> a <= 1. && b >= 0. ) 
+    |> List.sortBy (fun ints ->
+        match ints with
+        | Point a -> a
+        | Overlap (a,_) -> a)
