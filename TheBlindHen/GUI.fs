@@ -104,9 +104,9 @@ module MVU =
             { state with Index = newIndex }, Cmd.none
         | Backward steps -> { state with Index = max 0 (state.Index - steps) }, Cmd.none
         | Reset -> { state with Index = 0 }, Cmd.none
-        | Save -> 
-            state, 
-            Cmd.OfFunc.attempt 
+        | Save ->
+            state,
+            Cmd.OfFunc.attempt
                 (fun s -> File.WriteAllText("solution", Model.deparseSolution(Model.solutionOfFigure(s.History.[s.Index]))))
                 state
                 (fun _ -> Id)
@@ -142,16 +142,6 @@ module MVU =
         let scale = state.Scale
         DockPanel.create [
             DockPanel.children [
-                Button.create [
-                    Button.dock Dock.Bottom
-                    Button.onClick (fun _ -> dispatch Reset)
-                    Button.content "Reset"
-                ]
-                Button.create [
-                    Button.dock Dock.Bottom
-                    Button.onClick (fun _ -> dispatch Save)
-                    Button.content "Save"
-                ]
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
                     UniformGrid.columns 2
@@ -187,6 +177,16 @@ module MVU =
                         Button.create [
                             Button.onClick (fun _ -> dispatch ZoomIn)
                             Button.content "+"
+                        ]
+                        Button.create [
+                            Button.dock Dock.Bottom
+                            Button.onClick (fun _ -> dispatch Reset)
+                            Button.content "Reset"
+                        ]
+                        Button.create [
+                            Button.dock Dock.Bottom
+                            Button.onClick (fun _ -> dispatch Save)
+                            Button.content "Save"
                         ]
                     ]
                 ]
