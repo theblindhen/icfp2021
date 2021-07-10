@@ -66,7 +66,7 @@ let sortSegments (segments : Segment list) =
 //     let edges
 
 let vectorOfSegment ((s1, s2): Segment) =
-    Vector (float (s1.X - s2.X), float (s1.Y - s2.Y)) 
+    Vector (float (s2.X - s1.X), float (s2.Y - s1.Y)) 
 
 let vectorDotProduct (v1: Vector) (v2: Vector) =
     v1.X * v2.X + v1.Y * v2.Y
@@ -116,13 +116,13 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
     let p2,q2 = seg2
     let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
     match solveByInversion (v1, v2) startDiff with
-    | Some (sol, det) -> Some (Point (-sol.X, _determinantToDirection det,  -sol.Y))
+    | Some (sol, det) -> Some (Point (sol.X, _determinantToDirection det,  sol.Y))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
         // TODO: Refactor to save a sqrt
         if vectorsAreParallel startDiff v1 then
-            Some (Overlap (float(p1.X - p2.X)/v1.X, float(p1.X - q2.X)/v1.X))
+            Some (Overlap (-float(p1.X - p2.X)/v1.X, -float(p1.X - q2.X)/v1.X))
         else
             None
 
@@ -179,10 +179,10 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
             let i = if i = 0 then segArr.Length-1 else i - 1
             let holeSegv = vectorOfSegment segArr.[i]
             let d = vectorDeterminant segv holeSegv
-            if d < EPSILON then
+            if abs(d) < EPSILON then
                 getLastDir i
             else
-                vectorsDirection segv holeSegv
+                _determinantToDirection d
         getLastDir firstIdx
     let (decompositionsRev, _) = 
         List.fold (fun (acc, lastDir) cur ->
