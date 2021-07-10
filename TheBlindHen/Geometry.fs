@@ -112,8 +112,7 @@ let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option
 let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : SegmentIntersect list =
     intersectors 
     |> List.choose (segmentsIntersect seg)
-    |> List.map (fun ints ->
-        match ints with
+    |> List.map (function
         | Overlap (a,b) ->
             let a, b = 
                 if a < b then
@@ -124,15 +123,67 @@ let segmentIntersectionList (seg: Segment) (intersectors: Segment list) : Segmen
                 Point a // TODO: Test for this case
             else
                 Overlap (a, b)
-        | _ -> ints)
-    |> List.filter (fun ints ->
-        match ints with
+        | ints -> ints)
+    |> List.filter (function
         | Point a -> a >= 0. && a <= 1.
         | Overlap (a,b) -> a <= 1. && b >= 0. ) 
 
 let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : SegmentIntersect list =
-    segmentIntersectionList seg simplePolygon
+    let intersections = segmentIntersectionList seg simplePolygon
+    let overlapEndpoints : HashSet<int> =
+        intersections
+        |> List.collect (function
+                         | Overlap (a,b) -> [ int (round a); int (round b) ]
+                         | _ -> [])
+        |> HashSet.ofList
+    intersections
+    |> List.filter (function
+        | Overlap _ -> true
+        | Point a ->
+            not (HashSet.contains (int (round a)) overlapEndpoints))
     |> List.sortBy (fun ints ->
         match ints with
         | Point a -> a
-        | Overlap (a,b) -> a)
+        | Overlap (a,_) -> a)
+
+
+// /// A structure for precomputed set of points in the hole
+// type HolePoints = {
+//     Arr: bool[,]
+//     Dx: int
+//     Dy: int
+// }
+
+// /// Return the set of points of the hole of the problem
+// let getHolePoints (problem: Problem) =
+//     let holeSegs = holeSegments problem
+//     let cmin, cmax = holeBoundingBox problem
+//     let arr = Array2D.init (cmax.X - cmin.X + 1) (cmax.Y - cmin.Y + 1) (fun _ _ -> false)
+//     for y in cmin.Y .. cmax.Y do
+//         let seg = (Coord (cmin.X, y), Coord (cmax.X, y))
+//         let lastCross = ref -1.
+//         let inHole = ref false
+//         segmentDecomposition seg holeSegs
+//         |> List.iter (fun ints ->
+//             match ints with
+//             | Point a ->
+//                 if !inHole then
+//                     let startX = ceil (!lastCross-EPSILON)
+//                     let endX = floor (a + EPSILON)
+//                     for x in  startX .. endX  do
+//                         if float x >= cmin.X && float x <= cmax.X then
+//                             arr[x - cmin.X, y - cmin.Y] = true
+//                 )
+
+//     { Arr = arr
+//       Dx = cmin.X
+//       Dy = cmin.Y }
+
+// /// Is the given coord in the hole
+// let inHole (c: Coord) (hole: HolePoints) =
+//     let lX = c.X - hole.Dx
+//     let lY = c.Y - hole.Dy
+//     if lX < 0 || lX >= Array2D.length1 hole.Arr || lY < 0 || lY >= Array2D.length2 hole.Arr then
+//         false
+//     else 
+//         hole.Arr.[lX, lY]
