@@ -10,13 +10,45 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: (Model.Figure -> Model.Figure) option ref = ref None
 
+/// Returns (smallest, largest)
+let holeBoundingBox (problem: Model.Problem) =
+    let segments = Model.holeSegments problem
+    let xs = segments |> List.collect (fun (xy1, xy2) -> [xy1.X; xy2.X])
+    let ys = segments |> List.collect (fun (xy1, xy2) -> [xy1.Y; xy2.Y])
+    let minx = xs |> List.min
+    let miny = ys |> List.min
+    let maxx = xs |> List.max
+    let maxy = ys |> List.max
+    (Model.Coord (minx, miny), Model.Coord (maxx, maxy))
+
+let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
+    figure.Vertices
+    |> Array.sumBy (fun xy ->
+        max 0 (minCorner.X - xy.X) +
+        max 0 (xy.X - maxCorner.X) +
+        max 0 (minCorner.Y - xy.Y) +
+        max 0 (xy.Y - maxCorner.Y))
+    |> float
+    |> ( * ) 1000.0
+
 let figurePenalty (problem: Model.Problem) =
-    Penalty.penaltyEdgeLengthSqSum problem
+    let bb = holeBoundingBox problem
+    fun figure ->
+        Penalty.penaltyEdgeLengthSqSum problem figure +
+        holeBBPenalty bb figure
 
 let stepSolver (problem: Model.Problem) =
     let rnd = System.Random (int System.DateTime.Now.Ticks)
     let neighbors = Neighbors.translateRandomCoord rnd
-    Hillclimber.step neighbors (figurePenalty problem)
+    let penalty = figurePenalty problem
+    let bb = holeBoundingBox problem
+    fun figure ->
+        let result = Hillclimber.step neighbors penalty figure
+        // TODO: this is just debug printing
+        printfn "penalty = %f + %f"
+            (Penalty.penaltyEdgeLengthSqSum problem result)
+            (holeBBPenalty bb result)
+        result
 
 module MVU =
     open Avalonia.Controls
