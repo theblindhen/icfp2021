@@ -67,6 +67,9 @@ let solutionOfFigure (f: Figure): Solution =
 let mapFigureVerticies (f : Coord -> Coord) (fig: Figure): Figure =
     { fig with Vertices = Array.map f fig.Vertices }
 
+let mapiFigureVerticies (f : int -> Coord -> Coord) (fig: Figure): Figure =
+    { fig with Vertices = Array.mapi f fig.Vertices }
+
 let copyFigureVerticies (fig: Figure): Figure =
     { fig with Vertices = Array.copy fig.Vertices }
 
@@ -115,6 +118,16 @@ let figureSegments (fig: Figure) =
 let holeBoundingBox (problem: Problem) =
     let xs = problem.Hole |> Array.map (fun c -> c.X)
     let ys = problem.Hole |> Array.map (fun c -> c.Y)
+    let minx = xs |> Array.min
+    let miny = ys |> Array.min
+    let maxx = xs |> Array.max
+    let maxy = ys |> Array.max
+    (Coord (minx, miny), Coord (maxx, maxy))
+
+/// Returns (smallest, largest)
+let figureBoundingBox (figure: Figure) =
+    let xs = figure.Vertices |> Array.map (fun c -> c.X)
+    let ys = figure.Vertices |> Array.map (fun c -> c.Y)
     let minx = xs |> Array.min
     let miny = ys |> Array.min
     let maxx = xs |> Array.max
