@@ -44,8 +44,8 @@ let writeSolution solutionDir problem figure =
     | Some(best) when dislikes < best ->
         printfn "Found a better solution (dislikes: %d -> %d). Writing solution to %s" best dislikes solutionFile
         IO.File.WriteAllText(solutionFile, solutionText)
-    | _ ->
-        printfn "A better solution already exists. Not writing a new file. Solution:"
+    | Some(best) ->
+        printfn "A better solution already exists (dislikes: %d). Not writing a new file. Solution (dislikes: %d):" best dislikes
         printfn "%s" solutionText
 
 let printSolution figure =
