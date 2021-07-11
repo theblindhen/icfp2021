@@ -58,6 +58,17 @@ let rotateRandomArticulationPoint (problem: Problem) =
             Some (Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure)
         else None
 
+let rotateRandomArticulationPointSet (problem: Problem) =
+    let rnd = Util.getRandom ()
+    let adj = Graph.adjacencyMatrix problem.Figure
+    fun figure ->
+        let articulationPointSets = Graph.findArticulationPointSets adj figure
+        if not(List.isEmpty articulationPointSets) then
+            let (c, components) = articulationPointSets.[rnd.Next(articulationPointSets.Length)]
+            let rndComponent = components.[rnd.Next(components.Length)]
+            Some (Transformations.rotateSelectedVerticiesAround rndComponent c figure) 
+        else None
+
 let mirrorAcrossRandomVerticalCutLine (problem: Problem) =
     let rnd = Util.getRandom ()
     let adj = Graph.adjacencyMatrix problem.Figure
@@ -111,9 +122,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         //1.0, (rotateRandomArticulationPoint problem);
         //1.0, (mirrorAcrossRandomVerticalCutLine problem);
         //1.0, (mirrorAcrossRandomHorizontalCutLine problem);
+        //1.0, (rotateRandomArticulationPointSet problem);
 
         // Total neighbor functions
         4.0, (translateRandomCoord problem);
         1.0, (translateFullFigureRandomly problem);
-        1.0, (rotateFullFigureAroundRandomPoint problem);
+        //1.0, (rotateFullFigureAroundRandomPoint problem);
     ]
