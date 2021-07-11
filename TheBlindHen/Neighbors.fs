@@ -43,15 +43,27 @@ let rotateRandomArticulationPoint (problem: Problem) =
             Some (Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure)
         else None
 
-(*let mirrorAcrossRandomVerticalAxis (problem: Problem) (figure: Figure) =
+let mirrorAcrossRandomVerticalCutLine (problem: Problem) =
     let rnd = Util.getRandom ()
-    let verticalReflectionLines = Graph.findVerticalReflectionLines figure
-    if not(List.isEmpty verticalReflectionLines) then 
-        let rndReflectionLine = verticalReflectionLines.[rnd.Next(verticalReflectionLines.Length)]
-        let 
-        Some (Transformations.mirrorSelectedVerticiesVertically rndReflectionLine figure)
-    else None*)
+    let adj = Graph.adjacencyMatrix problem.Figure
+    fun figure ->
+        let verticalCutComponents = Graph.findVerticalCutComponents adj figure
+        if not(List.isEmpty verticalCutComponents) then
+            let (x, components) = verticalCutComponents.[rnd.Next(verticalCutComponents.Length)]
+            let rndComponent = components.[rnd.Next(components.Length)]
+            Some (Transformations.mirrorSelectedVerticiesVertically rndComponent x figure)
+        else None
 
+let mirrorAcrossRandomHorizontalCutLine (problem: Problem) =
+    let rnd = Util.getRandom ()
+    let adj = Graph.adjacencyMatrix problem.Figure
+    fun figure ->
+        let horizontalCutComponents = Graph.findHorizontalCutComponents adj figure
+        if not(List.isEmpty horizontalCutComponents) then
+            let (y, components) = horizontalCutComponents.[rnd.Next(horizontalCutComponents.Length)]
+            let rndComponent = components.[rnd.Next(components.Length)]
+            Some (Transformations.mirrorSelectedVerticiesHorizontally rndComponent y figure)
+        else None
 
 let weightedChoice (choices: (float * ('a -> 'b option)) list) (param: 'a) : 'b option =
     let totalWeight = List.sumBy fst choices
@@ -82,6 +94,8 @@ let balancedCollectionOfNeighbors (problem: Problem) =
  
         // Partial neighbor functions
         //1.0, (rotateRandomArticulationPoint problem);
+        //1.0, (mirrorAcrossRandomVerticalCutLine problem);
+        //1.0, (mirrorAcrossRandomHorizontalCutLine problem);
 
         // Total neighbor functions
         4.0, (translateRandomCoord problem);

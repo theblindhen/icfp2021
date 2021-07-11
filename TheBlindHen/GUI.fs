@@ -332,25 +332,23 @@ module MVU =
                         )  @
                         (
                             verticalCutLines
-                            |> Seq.map (fun (x, _) ->
+                            |> List.map (fun (x, _) ->
                                 Line.create [
                                     Line.startPoint (float x * scale, 0.0)
                                     Line.endPoint (float x * scale, 2000.0)
                                     Line.strokeThickness 2.0
                                     Line.stroke "#D3D3D3"
                                 ] :> Avalonia.FuncUI.Types.IView)
-                            |> List.ofSeq
                         ) @
                         (
                             horizontalCutLines
-                            |> Seq.map (fun (y, _) ->
+                            |> List.map (fun (y, _) ->
                                 Line.create [
                                     Line.startPoint (0.0, float y * scale)
                                     Line.endPoint (2000.0, float y * scale)
                                     Line.strokeThickness 2.0
                                     Line.stroke "#D3D3D3"
                                 ] :> Avalonia.FuncUI.Types.IView)
-                            |> List.ofSeq
                         ) @
                         (
                             [
