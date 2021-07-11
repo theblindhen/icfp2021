@@ -18,7 +18,7 @@ let argSpecs =
 
 let writeSolution solutionDir figure =
     let postfix = FitInHole.rnd.Next(999999)
-    let solutionFile = sprintf "%s%6d" solutionDir postfix
+    let solutionFile = sprintf "%s%06d" solutionDir postfix
     IO.Directory.CreateDirectory solutionDir |> ignore
     printfn "Writing solution to %s" solutionFile
     IO.File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(figure)))
