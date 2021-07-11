@@ -30,14 +30,14 @@ let generalSimulatedAnnealing
                     let e' = energyFunction state'
                     if e' <= 0.0 then
                         printfn "Solution found after %d iterations" !i
-                        (Some (ChoseNeighbor desc, state'), e') // solution found
+                        (ChoseNeighbor desc, state', e') // solution found
                     else if acceptanceFunction e e' temperature >= rnd.NextDouble() then
-                        (Some (ChoseNeighbor desc, state'), e') // step to next state
+                        (ChoseNeighbor desc, state', e') // step to next state
                     else
-                        (Some (RejectedNeighbor desc, state), e) // stay in previous state
-                | desc, None -> (Some (NowhereToGo desc, state), e)
+                        (RejectedNeighbor desc, state, e) // stay in previous state
+                | desc, None -> (NowhereToGo desc, state, e)
             else
-                (None, e) // no more iterations
+                (StopCriteria, state, e) // no more iterations
 
 let acceptanceFunctionSimple e e' temperature =
     if e' < e then
