@@ -40,6 +40,17 @@ let rotateFullFigureAroundRandomPoint (problem: Problem) (figure: Figure) =
     let rndCord = Array.item rndIndex figure.Vertices
     Some (Transformations.rotateVerticiesAround rndCord figure)
 
+let rotateFullFigureAroundBestPoint (problem: Problem) =
+    let penalty = Penalty.figurePenalty problem
+    fun figure ->
+        let bestRot =
+            figure.Vertices
+            |> Array.toList
+            |> List.collect (fun c ->
+                Transformations.rotateVerticiesAround3 c figure)
+            |> List.minBy penalty
+        if penalty bestRot < penalty figure then Some bestRot else None
+
 let rotateRandomArticulationPoint (problem: Problem) =
     let rnd = Util.getRandom ()
     let adj, isArticulationPoint = Graph.getArticulationPoints problem.Figure
@@ -126,9 +137,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        0.1, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
-        0.1, "mirror vertical cut", mustImprovePenalty mirrorAcrossRandomVerticalCutLine problem;
-        0.1, "mirror horizontal cut", mustImprovePenalty mirrorAcrossRandomHorizontalCutLine problem;
+        0.01, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
+        0.01, "mirror vertical cut", mustImprovePenalty mirrorAcrossRandomVerticalCutLine problem;
+        0.01, "mirror horizontal cut", mustImprovePenalty mirrorAcrossRandomHorizontalCutLine problem;
+        0.01, "rot full fig (try all points)", rotateFullFigureAroundBestPoint problem;
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions

@@ -30,6 +30,13 @@ let rotateSelectedVerticiesByAngle (selection: int list) (angle: float)  =
 let rotateVerticiesAround (origo: Model.Coord) =
     translateVerticies (-origo.X, -origo.Y) >> rotateVerticies >> translateVerticies (origo.X, origo.Y)
 
+let rotateVerticiesAround3 (origo: Model.Coord) figure =
+    let rot fig = rotateVerticiesAround origo fig
+    let rot1 = rot figure
+    let rot2 = rot rot1
+    let rot3 = rot rot2
+    [rot1; rot2; rot3]
+
 let rotateSelectedVerticiesAround (selection: int list) (origo: Model.Coord) =
     translateSelectedVerticies selection (-origo.X, -origo.Y)
     >> rotateSelectedVerticies selection
