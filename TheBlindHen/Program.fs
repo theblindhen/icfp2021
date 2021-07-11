@@ -24,17 +24,27 @@ let argSpecs =
 // same random seed here. Mix with process id?
 let fileNameRandomizer = Random()
 
-let writeSolution solutionDir figure =
+let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
+    dirinfo.EnumerateFiles ()
+    |> Seq.map (fun f -> int(f.Name))
+    |> Seq.sort
+    |> Seq.tryHead
+
+let writeSolution solutionDir problem figure =
     let solutionText = Model.deparseSolution(Model.solutionOfFigure(figure))
     let dirinfo = IO.Directory.CreateDirectory solutionDir
+    let dislikes = Penalty.dislikesPenalty problem figure
+    let solutionFile = sprintf "%s%d" solutionDir dislikes
     // Write the file only if the directory is empty
-    if Seq.isEmpty (dirinfo.EnumerateFiles()) then
-        let postfix = fileNameRandomizer.Next(999999)
-        let solutionFile = sprintf "%s%06d" solutionDir postfix
-        printfn "Writing solution to %s" solutionFile
+    match bestCurrentSolution dirinfo with
+    | None ->
+        printfn "Found a new solution (dislikes: %d). Writing solution to %s" dislikes solutionFile
         IO.File.WriteAllText(solutionFile, solutionText)
-    else
-        printfn "A solution file exists. Not writing a new file. Solution:"
+    | Some(best) when dislikes < best ->
+        printfn "Found a better solution (dislikes: %d -> %d). Writing solution to %s" best dislikes solutionFile
+        IO.File.WriteAllText(solutionFile, solutionText)
+    | _ ->
+        printfn "A better solution already exists. Not writing a new file. Solution:"
         printfn "%s" solutionText
 
 let printSolution figure =
@@ -46,7 +56,7 @@ let printSolution figure =
 let main args =
     ArgParser.Parse(argSpecs, fun s -> failwith $"Unknown argument: {s}")
     // Setup global random number generator as the first thing
-    printfn "Random seed for this run: %d" !seed
+    //printfn "Random seed for this run: %d" !seed
     Util._rnd := Some (Random(!seed))
     match !problemPath, !problemNo with
     | Some problemPath, Some problemNo ->
@@ -57,18 +67,17 @@ let main args =
         match !solution, !gui with
         | Some solFile, _ ->
             printfn $"Scoring solution {solFile}:"
-            let str = parseSolutionFile solFile
-                    |> figureOfSolution problem
-                    |> (Penalty.figurePenaltiesToString problem)
-            printfn $"\t{str}"
-            printfn $"\tTODO: Compute dislikes"
+            let figure = parseSolutionFile solFile
+                        |> figureOfSolution problem
+            printfn $"\t{Penalty.figurePenaltiesToString problem figure}"
+            printfn $"Dislikes: {Penalty.dislikesPenalty problem figure}"
             0
         | _, true ->
-            GUI.showGui problem (writeSolution solutionDir)
+            GUI.showGui problem (writeSolution solutionDir problem)
         | _, false ->
             let writeIfTold =
                 if !writeToFile then
-                    writeSolution solutionDir
+                    writeSolution solutionDir problem
                 else
                     printSolution
             FitInHole.solve problem writeIfTold

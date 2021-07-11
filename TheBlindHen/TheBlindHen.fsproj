@@ -12,9 +12,10 @@
     <Compile Include="Transformations.fs" />
     <Compile Include="SkiaUtil.fs" />
     <Compile Include="Graph.fs" />
+    <Compile Include="Penalty.fs" />
+    <Compile Include="Solver.fs" />
     <Compile Include="Neighbors.fs" />
     <Compile Include="Hillclimber.fs" />
-    <Compile Include="Penalty.fs" />
     <Compile Include="FitInHole.fs" />
     <Compile Include="GUI.fs" />
     <Compile Include="Program.fs" />
