@@ -111,7 +111,7 @@ let mustImprovePenalty (f: Problem -> (Figure -> option<Figure>)) (problem: Prob
         | Some figure' ->
             if penalties figure' < penalties figure then Some figure' else None
 
-let weightedChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : string * 'b option =
+let weightedFunChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : string * 'b option =
     let totalWeight = List.sumBy (fun (w,_,_) -> w) choices
     let rnd = Util.getRandom ()
     let randomNumber = rnd.NextDouble() * totalWeight
@@ -133,7 +133,7 @@ let weightedChoice (choices: (float * string * ('a -> 'b option)) list) (param: 
 /// This should be our main neighbors function that takes a balanced approach to
 /// selecting a reasonable number of neighbors of each kind.
 let balancedCollectionOfNeighbors (problem: Problem) =
-    weightedChoice [
+    weightedFunChoice [
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
