@@ -36,9 +36,9 @@ let stepSolverWithStopAndDebug problem =
             let resPenalties = penalties result
             let spenalties =
                 resPenalties
-                |> List.map (fun p -> sprintf "%.2f" p) 
+                |> List.map (fun p -> sprintf "%.1f" p) 
                 |> String.concat " + "
-            printfn $"penalty = {spenalties} = {List.sum(resPenalties)}"
+            printfn $"penalty = {spenalties} = %.1f{List.sum(resPenalties)}"
             (result, penalty)
 
 module MVU =
@@ -186,6 +186,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
+        let edgeLengthExcessSq = Penalty.edgeLengthExcessSq state.Problem
         let adj, isArticulationPoint = Graph.getArticulationPoints shownFigure
         let verticalCutLines = Graph.findVerticalCutComponents adj shownFigure
         let horizontalCutLines = Graph.findHorizontalCutComponents adj shownFigure
@@ -309,13 +310,20 @@ module MVU =
                         (
                             figure.Edges
                             |> Array.toList
-                            |> List.map (fun (s,t) ->
+                            |> List.mapi (fun edgeIdx (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
                                 let outsideHolePenalty = segmentOutsideHole (sc, tc)
+                                let edgeLengthPenalty = edgeLengthExcessSq edgeIdx (sc, tc) 
                                 let color =
                                     if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
                                     else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
-                                    else "#00FF00"
+                                    else
+                                        if edgeLengthPenalty < -Geometry.EPSILON then
+                                            "#88FF88"
+                                        else if edgeLengthPenalty > Geometry.EPSILON then
+                                            "#00AA00"
+                                        else
+                                            "#00FF00"
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)
