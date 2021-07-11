@@ -10,17 +10,20 @@ let adjacentVertices (fig: Figure): Map<VertexId, VertexId list> =
             | Some currAdj -> Some (t::currAdj)) adjMap
     Array.fold (fun adjMap (s, t) -> adjMap |> addVertex s t |> addVertex t s) Map.empty fig.Edges
 
-let getArticulationPoints (figure : Figure) =
+let adjacencyMatrix (figure: Figure) =
     let adj : bool[,] = Array2D.create (figure.Vertices.Length) (figure.Vertices.Length) false
+    for (a,b) in figure.Edges do
+        adj.[a,b] <- true
+        adj.[b,a] <- true
+    adj
+
+let getArticulationPoints (figure : Figure) =
     let disc : int array = Array.zeroCreate (figure.Vertices.Length)
     let low : int array = Array.create (figure.Vertices.Length) (System.Int32.MaxValue)
     let visited : bool array = Array.create (figure.Vertices.Length) false
     let parent : VertexId array = Array.create (figure.Vertices.Length) (-1)
     let articulationPoint : bool array = Array.create (figure.Vertices.Length) false
-
-    for (a,b) in figure.Edges do
-        adj.[a,b] <- true
-        adj.[b,a] <- true
+    let adj : bool[,] = adjacencyMatrix figure
 
     let rec dfs (vertex : VertexId) (time: int) =
         visited.[vertex] <- true
@@ -76,7 +79,7 @@ let findVerticalCutComponents (adj: bool[,]) (figure: Figure) =
         (x, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
     |> Seq.filter (fun (_, components) ->
         List.length components > 1)
-
+    |> Seq.toList
 
 let findHorizontalCutComponents (adj: bool[,]) (figure: Figure) =
     figure.Vertices
@@ -86,3 +89,4 @@ let findHorizontalCutComponents (adj: bool[,]) (figure: Figure) =
         (y, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
     |> Seq.filter (fun (_, components) ->
         List.length components > 1)
+    |> Seq.toList
