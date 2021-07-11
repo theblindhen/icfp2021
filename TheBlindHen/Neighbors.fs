@@ -119,9 +119,9 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        //1.0, (rotateRandomArticulationPoint problem);
-        //1.0, (mirrorAcrossRandomVerticalCutLine problem);
-        //1.0, (mirrorAcrossRandomHorizontalCutLine problem);
+        1.0, (rotateRandomArticulationPoint problem);
+        1.0, (mirrorAcrossRandomVerticalCutLine problem);
+        1.0, (mirrorAcrossRandomHorizontalCutLine problem);
         //1.0, (rotateRandomArticulationPointSet problem);
 
         // Total neighbor functions
