@@ -176,11 +176,11 @@ let isValid (problem: Problem): Figure -> bool =
         List.sumBy (fun penalty -> penalty figure) penalties = 0.0
 
 let figurePenalties (problem: Problem): Figure -> float list =
-    let penalties = [ 1.0, penaltyEdgeLengthSqSum
-                      1.0, outsideHoleEndpointPenalty 
-                      //1.0, outsideHoleSegmentPenalty Skia
-                      1.0, penaltyEdgeRatioOutside
-                      //1.0, dislikesPenalty
+    let penalties = [ 1_000_000_000.0, penaltyEdgeLengthSqSum
+                      1_000_000_000.0, outsideHoleEndpointPenalty 
+                      //1_000_000_000.0, outsideHoleSegmentPenalty Skia
+                      1_000_000_000.0, penaltyEdgeRatioOutside
+                      1.0, dislikesPenalty
                     ] |> List.map (fun (weight, partPenalty) -> (weight, partPenalty problem))
     fun figure ->
         List.map (fun (weight, penalty) -> weight * penalty figure) penalties
