@@ -33,7 +33,7 @@ let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
 let writeSolution solutionDir problem figure =
     let solutionText = Model.deparseSolution(Model.solutionOfFigure(figure))
     let dirinfo = IO.Directory.CreateDirectory solutionDir
-    let dislikes = Penalty.dislikesPenalty problem figure
+    let dislikes = Penalty.dislikes problem figure
     let solutionFile = sprintf "%s%d" solutionDir dislikes
     // Write the file only if the directory is empty
     match bestCurrentSolution dirinfo with
