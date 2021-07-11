@@ -68,6 +68,8 @@ type Solution = {
     SolutionVertices: Coord array
 }
 
+type MoveDesc = RejectedNeighbor of string | ChoseNeighbor of string | NowhereToGo
+
 let solutionOfFigure (f: Figure): Solution =
     {
         SolutionVertices = f.Vertices

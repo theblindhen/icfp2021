@@ -154,22 +154,24 @@ let outsideHoleSegmentPenaltySkia (problem: Problem): Figure -> float =
                 segmentLengthSq (sc, tc) |> float
             else 0.0)
 
+let dislikes (problem: Problem) (figure : Figure) : int =
+    problem.Hole
+    |> Array.sumBy (fun (c: Coord) ->
+        (segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) figure.Vertices)))
+
 let dislikesPenalty (problem: Problem): Figure -> float =
-    fun figure ->
-        problem.Hole
-        |> Array.sumBy (fun (c: Coord) ->
-            segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) figure.Vertices))
-        |> float
+    fun figure -> 
+        dislikes problem figure |> float     
 
 let figurePenalties (problem: Problem): Figure -> float list =
-    let penalties = [ penaltyEdgeLengthSqSum
-                      outsideHoleEndpointPenalty 
-                      // outsideHoleSegmentPenalty Skia
-                      penaltyEdgeRatioOutside
-                      // dislikesPenalty
-                    ] |> List.map (fun penalty -> penalty problem)
+    let penalties = [ 1.0, penaltyEdgeLengthSqSum
+                      1.0, outsideHoleEndpointPenalty 
+                      //1.0, outsideHoleSegmentPenalty Skia
+                      1.0, penaltyEdgeRatioOutside
+                      //1.0, dislikesPenalty
+                    ] |> List.map (fun (weight, partPenalty) -> (weight, partPenalty problem))
     fun figure ->
-        List.map (fun penalty -> penalty figure) penalties
+        List.map (fun (weight, penalty) -> weight * penalty figure) penalties
 
 let figurePenalty (problem: Problem): Figure -> float =
     let penalties = figurePenalties problem

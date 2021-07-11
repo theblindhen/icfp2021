@@ -14,10 +14,7 @@ let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Mode
 
 let stepSolver (problem: Model.Problem) =
     let getNeighbor = Neighbors.balancedCollectionOfNeighbors problem
-    let penalties = Penalty.figurePenalties problem
-    let penaltySum fig = List.sum (penalties fig)
-    let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 ()
-    step
+    Solver.simulatedAnnealingStepper problem getNeighbor 100_000
 
 let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
     let stepper = stepSolver problem
@@ -27,9 +24,10 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
         match result with
         | None ->
             printfn "No more iterations left. Penalty %f" penalty
-        | Some figure when penalty = 0.0 ->
+        | Some (desc, figure) when penalty = 0.0 ->
             printfn "Problem solved! OMG!"
             writeSolution figure
-        | Some figure ->
+        | Some (desc, figure) ->
+            printfn $"Iteration %d{i}: {desc}"
             run (i + 1) figure
     run 0 problem.Figure
