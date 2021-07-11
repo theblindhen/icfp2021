@@ -640,7 +640,7 @@ type GeometryGraphTestClass () =
                 Vertices = Array.create 6 dummy
             }
         let expected = [ (0,true); (1,true); (2,false); (3,false); (4,false); (5,false)]
-        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        let (adj, ap) = Graph.getArticulationPoints figure
         Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..5])
 
     [<TestMethod>]
@@ -652,7 +652,7 @@ type GeometryGraphTestClass () =
                 Vertices = Array.create 6 dummy
             }
         let expected = [ (0,false); (1,false); (2,false); (3,false); (4,false); (5,false)]
-        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        let (adj, ap) = Graph.getArticulationPoints figure
         Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..5])
 
     [<TestMethod>]
@@ -664,5 +664,5 @@ type GeometryGraphTestClass () =
                 Vertices = Array.create 7 dummy
             }
         let expected = [ (0,false); (1,false); (2,false); (3,true); (4,false); (5,false); (6,false)]
-        let (adj, disc, low, visited, parent, ap) = getArticulationPoints figure
+        let (adj, ap) = Graph.getArticulationPoints figure
         Assert.AreEqual(expected, List.map (fun n -> (n,ap.[n])) [0..6])

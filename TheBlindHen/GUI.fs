@@ -176,7 +176,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
-        let _, _, _, _, _, articulationPoints = Geometry.getArticulationPoints shownFigure
+        let _, isArticulationPoint = Graph.getArticulationPoints shownFigure
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -297,7 +297,7 @@ module MVU =
                         (
                             figure.Vertices
                             |> Array.mapi (fun i c -> (i, c))
-                            |> Array.filter (fun (i, _) -> articulationPoints.[i])
+                            |> Array.filter (fun (i, _) -> isArticulationPoint.[i])
                             |> Array.toList
                             |> List.map (fun (_, c) ->
                                 Ellipse.create [

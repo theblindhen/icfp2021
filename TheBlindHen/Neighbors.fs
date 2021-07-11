@@ -21,6 +21,22 @@ let rotateFullFigureAroundRandomPoint (rnd: System.Random) (figure: Figure) =
     let rndIndex = rnd.Next(figure.Vertices.Length)
     let rndCord = Array.item rndIndex figure.Vertices
     Transformations.rotateVerticiesAround rndCord figure
+
+let rotateRandomArticulationPoint (rnd: System.Random) (figure: Figure) =
+    let adj, isArticulationPoint = Graph.getArticulationPoints figure
+    let articulationPoints =
+        isArticulationPoint
+        |> Array.mapi (fun i v -> (i, v))
+        |> Array.filter snd
+        |> Array.map fst
+    if not (Array.isEmpty articulationPoints) then
+        let rndArticulationPoint = articulationPoints.[rnd.Next(articulationPoints.Length)]
+        let rndArticulationPointCoord = figure.Vertices.[rndArticulationPoint]
+        let components = Graph.connectedComponentsWithoutVertex rndArticulationPoint adj
+        printfn $"{components}"
+        let selection = List.minBy List.length components
+        Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure
+    else figure
  
 let weightedChoice (choices: (float * (System.Random -> 'a -> 'b)) list) (rnd: System.Random) (param: 'a) : 'b =
     let totalWeight = List.sumBy fst choices
@@ -47,4 +63,5 @@ let balancedCollectionOfNeighbors (rnd: System.Random) (figure: Figure) =
         4.0, translateRandomCoord;
         1.0, translateFullFigureRandomly;
         //0.1, rotateFullFigureAroundRandomPoint;
+        //1.0, rotateRandomArticulationPoint
     ] rnd figure
