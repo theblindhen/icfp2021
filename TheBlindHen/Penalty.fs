@@ -105,17 +105,15 @@ let segmentOutsideHole holeSegments =
     memoize (fun seg ->
         let decoms = segmentDecomposition seg holeSegments
         let rec iter (isInside, acc, lastCross) =
+            let accUpd acc a =
+                if isInside then acc else acc + (max 0. (a - lastCross))
             function
-            | DecPoint (a, Cross) :: decomTl -> 
-                let accUpd = if isInside then acc else acc + a - lastCross
-                let lastUpd = a
-                iter (not isInside, accUpd, lastUpd) decomTl
-            | DecPoint (_, Touch) :: decomTl -> iter (isInside, acc, lastCross) decomTl
+            | DecPoint (a, typ) :: decomTl -> 
+                let typUpd = if typ = Cross then not isInside else isInside
+                iter (typUpd, accUpd acc a, a) decomTl
             | DecOverlap (a,b) :: decomTl -> 
-                let accUpd = if isInside then acc else acc + a - lastCross
-                let lastUpd = b
-                iter (isInside, accUpd, lastUpd) decomTl            
-            | [] -> if isInside then acc else acc + 1.0 - lastCross
+                iter (isInside, accUpd acc a, b) decomTl            
+            | [] -> accUpd acc 1.0
         iter (isInside seg, 0.0, 0.0) decoms
         )
 
