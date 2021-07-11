@@ -16,12 +16,22 @@ let argSpecs =
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
+// TODO: .NET documents that two processes started at the same time will get the
+// same random seed here. Mix with process id?
+let fileNameRandomizer = Random()
+
 let writeSolution solutionDir figure =
-    let postfix = FitInHole.rnd.Next(999999)
-    let solutionFile = sprintf "%s%06d" solutionDir postfix
-    IO.Directory.CreateDirectory solutionDir |> ignore
-    printfn "Writing solution to %s" solutionFile
-    IO.File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(figure)))
+    let solutionText = Model.deparseSolution(Model.solutionOfFigure(figure))
+    let dirinfo = IO.Directory.CreateDirectory solutionDir
+    // Write the file only if the directory is empty
+    if Seq.isEmpty (dirinfo.EnumerateFiles()) then
+        let postfix = fileNameRandomizer.Next(999999)
+        let solutionFile = sprintf "%s%06d" solutionDir postfix
+        printfn "Writing solution to %s" solutionFile
+        IO.File.WriteAllText(solutionFile, solutionText)
+    else
+        printfn "A solution file exists. Not writing a new file. Solution:"
+        printfn "%s" solutionText
 
 let printSolution figure =
     printfn "A solution was found, but it will not be written to a file unless -w is given."
