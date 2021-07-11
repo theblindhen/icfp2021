@@ -11,6 +11,7 @@ for i in {1..132}; do
             curl -H "Authorization: Bearer $APIKEY" --data @problems/$i-solutions/$SMALLEST https://poses.live/api/problems/$i/solutions
             echo
             touch problems/$i-solutions/$SMALLEST.submitted
+            git add problems/$i-solutions/$SMALLEST
             git add problems/$i-solutions/$SMALLEST.submitted
         fi
     fi
