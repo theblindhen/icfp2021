@@ -23,7 +23,7 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
     let stepper = stepSolver problem
     let rec run i figure =
         let (result, penalty) = stepper figure
-        printfn "  %7d %f" i penalty
+        //printfn "  %7d %f" i penalty
         match result with
         | None ->
             printfn "No more iterations left. Penalty %f" penalty
