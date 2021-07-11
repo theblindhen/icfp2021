@@ -142,6 +142,21 @@ let mirrorAcrossRandomVerticalCutLine (problem: Problem) =
             Some (Transformations.mirrorSelectedVerticiesVertically rndComponent x figure)
         else None
 
+let mirrorAcrossBestVerticalCutLine (problem: Problem) =
+    let adj = Graph.adjacencyMatrix problem.Figure
+    let penalty = Penalty.figurePenalty problem
+    fun figure ->
+        let bestMirror =
+            Graph.findVerticalCutComponents adj figure
+            |> List.collect (fun (x, components) ->
+                List.map (fun selection ->
+                    Transformations.mirrorSelectedVerticiesVertically selection x figure) components)
+            |> List.sortBy penalty
+            |> List.tryHead
+        match bestMirror with
+        | Some bestMirror when penalty bestMirror < penalty figure -> Some bestMirror 
+        | _ -> None
+
 let mirrorAcrossRandomHorizontalCutLine (problem: Problem) =
     let rnd = Util.getRandom ()
     let adj = Graph.adjacencyMatrix problem.Figure
@@ -152,6 +167,21 @@ let mirrorAcrossRandomHorizontalCutLine (problem: Problem) =
             let rndComponent = components.[rnd.Next(components.Length)]
             Some (Transformations.mirrorSelectedVerticiesHorizontally rndComponent y figure)
         else None
+
+let mirrorAcrossBestHorizontalCutLine (problem: Problem) =
+    let adj = Graph.adjacencyMatrix problem.Figure
+    let penalty = Penalty.figurePenalty problem
+    fun figure ->
+        let bestMirror =
+            Graph.findHorizontalCutComponents adj figure
+            |> List.collect (fun (y, components) ->
+                List.map (fun selection ->
+                    Transformations.mirrorSelectedVerticiesHorizontally selection y figure) components)
+            |> List.sortBy penalty
+            |> List.tryHead
+        match bestMirror with
+        | Some bestMirror when penalty bestMirror < penalty figure -> Some bestMirror 
+        | _ -> None
 
 let mustImprovePenalty (f: Problem -> (Figure -> option<Figure>)) (problem: Problem) =
     let f = f problem
@@ -188,10 +218,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        0.01, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
-        0.01, "mirror vertical cut", mustImprovePenalty mirrorAcrossRandomVerticalCutLine problem;
-        0.01, "mirror horizontal cut", mustImprovePenalty mirrorAcrossRandomHorizontalCutLine problem;
-        0.01, "rot full fig (try all points)", rotateFullFigureAroundBestPoint problem;
+        0.001, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
+        0.001, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
+        0.001, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
+        0.001, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
