@@ -56,7 +56,7 @@ let printSolution figure =
 let main args =
     ArgParser.Parse(argSpecs, fun s -> failwith $"Unknown argument: {s}")
     // Setup global random number generator as the first thing
-    //printfn "Random seed for this run: %d" !seed
+    printfn "Random seed for this run: %d" !seed
     Util._rnd := Some (Random(!seed))
     match !problemPath, !problemNo with
     | Some problemPath, Some problemNo ->
