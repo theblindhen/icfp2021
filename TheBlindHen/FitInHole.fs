@@ -24,9 +24,10 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
         match result with
         | None ->
             printfn "No more iterations left. Penalty %f" penalty
-        | Some figure when penalty = 0.0 ->
+        | Some (desc, figure) when penalty = 0.0 ->
             printfn "Problem solved! OMG!"
             writeSolution figure
-        | Some figure ->
+        | Some (desc, figure) ->
+            printfn $"Iteration %d{i}: {desc}"
             run (i + 1) figure
     run 0 problem.Figure

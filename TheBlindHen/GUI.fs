@@ -1,6 +1,7 @@
 module GUI
 
 open System
+open Model
 
 let WINDOWSIZE = 800.0
 
@@ -32,8 +33,14 @@ let stepSolverWithStopAndDebug problem =
             (figure, figurePenalty)
         else
             let resultOpt, penalty = stepSolver figure
-            let result = Option.defaultValue figure resultOpt
-            printfn $"{figurePenaltiesToString result}"
+            let desc, result =
+                match resultOpt with
+                | None -> NowhereToGo, figure
+                | Some (desc, fig) -> desc, fig
+            match desc with
+            | NowhereToGo -> printfn "Nowhere to go?!"
+            | RejectedNeighbor desc -> printfn $"Rejected move by {desc}"
+            | ChoseNeighbor desc -> printfn $"Chose move by {desc}\n\t{figurePenaltiesToString result}"
             (result, penalty)
 
 module MVU =

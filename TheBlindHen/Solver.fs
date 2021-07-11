@@ -3,7 +3,7 @@ module Solver
 open System
 open Model
 
-type Stepper = Figure -> Figure option * float
+type Stepper = Figure -> (MoveDesc * Figure) option * float
 
 let simulatedAnnealingStepper (problem: Problem) getNeighbor iterations =
     let penalties = Penalty.figurePenalties problem
@@ -17,8 +17,8 @@ let runSolver (stepper: Stepper) figure =
         | None, _ -> 
             // No more iterations left
             figure
-        | Some figure, 0.0 ->
+        | Some (_,figure), 0.0 ->
             figure
-        | Some figure, _ ->
+        | Some (_,figure), _ ->
             run (i+1) figure
     run 0 figure
