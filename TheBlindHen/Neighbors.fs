@@ -4,7 +4,39 @@ open Model
 
 let directions = [| (1, 0); (0, 1); (-1, 0); (0, -1) |]
 
-let translateRandomCoordOfVertex (problem: Problem) (figure: Figure) (vertexIdx: int) =
+let weightedChoice (choices: (float * 'a ) list) : 'a =
+    let totalWeight = List.sumBy (fun (w,_) -> w) choices
+    let rnd = Util.getRandom ()
+    let randomNumber = rnd.NextDouble() * totalWeight
+    let rec iter acc =
+        function
+        | [] -> failwith "Nowhere to go"
+        // Make sure we always pick the last choice, even if there was
+        // floating-point imprecision.
+        | [ (_, e) ] -> e
+        | (weight, e) :: tail ->
+            let acc = acc + weight
+            if randomNumber < acc then
+                e
+            else
+                iter acc tail
+    iter 0.0 choices
+
+let getRandomBadVertexIdx (problem: Problem) =
+    let badness = Penalty.vertexBadness problem
+    fun fig ->
+        let badness = badness fig
+        let badChoices =
+            badness
+            |> Array.toList
+            |> List.filter (fun pen -> pen > 0.0)
+            |> List.indexed
+            |> List.map (fun (idx, pen) -> (sqrt (pen), idx))
+        match badChoices with
+        | [] -> None
+        | _  -> Some (weightedChoice badChoices)
+
+let translateRandomCoordOfVertex (figure: Figure) (vertexIdx: int) =
     let rnd = Util.getRandom ()
     let (dx, dy) = directions.[rnd.Next(directions.Length)]
     let rndCord = Array.item vertexIdx figure.Vertices
@@ -17,17 +49,36 @@ let translateRandomCoordOfVertex (problem: Problem) (figure: Figure) (vertexIdx:
 let translateRandomCoord (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let vertexIdx = rnd.Next(figure.Vertices.Length)
-    translateRandomCoordOfVertex problem figure vertexIdx
+    translateRandomCoordOfVertex figure vertexIdx
 
-/// Take a random vertex and take a multiple moves according to a meta-heuritic
-let translateRandomCoordMultiple (problem: Problem) (moves: int) (figure: Figure) =
-    let rnd = Util.getRandom ()
-    let vertexIdx = rnd.Next(figure.Vertices.Length)
+/// Take a random vertex and take a single move in a random direction
+let translateRandomBadVertex (problem: Problem) =
+    let getRandomBadVertexIdx = getRandomBadVertexIdx problem
+    fun fig ->
+        match getRandomBadVertexIdx fig with
+        | None -> None
+        | Some idx -> translateRandomCoordOfVertex fig idx
+
+let translateRandomCoordOfVertexMult (problem: Problem) (moves: int) (figure: Figure) (vertexIdx: int) =
     let getNeighbor = (fun fig ->
-        ("_translateRandomCoordMultiple", translateRandomCoordOfVertex problem fig vertexIdx))
+        ("_translateRandomCoordMultiple", translateRandomCoordOfVertex fig vertexIdx))
     // TODO: Temperature control of the local simulated annealing?
     let stepper = Solver.simulatedAnnealingStepper problem getNeighbor moves
     Some (Solver.runSolver stepper figure)
+
+/// Take a random vertex and take a multiple moves according to a meta-heuritic
+let translateRandomVertexMultiple (problem: Problem) (moves: int) (figure: Figure) =
+    let rnd = Util.getRandom ()
+    rnd.Next(figure.Vertices.Length)
+    |> translateRandomCoordOfVertexMult problem moves figure
+
+/// Take a random vertex and take a multiple moves according to a meta-heuritic
+let translateRandomBadVertexMultiple (problem: Problem) (moves: int) =
+    let getRandomBadVertexIdx = getRandomBadVertexIdx problem
+    fun fig ->
+        match getRandomBadVertexIdx fig with
+        | None -> None
+        | Some idx -> translateRandomCoordOfVertexMult problem moves fig idx
 
 let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
@@ -144,10 +195,11 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
-        4.0, "single step", translateRandomCoord problem;
-        2.0, "10 steps", translateRandomCoordMultiple problem 10;
-        1.0, "25 steps", translateRandomCoordMultiple problem 25;
-        0.2, "50 steps", translateRandomCoordMultiple problem 50;
+        4.0, "single step", translateRandomBadVertex problem;
+        2.0, "10 steps", translateRandomVertexMultiple problem 10;
+        1.0, "25 steps", translateRandomVertexMultiple problem 25;
+        0.2, "50 steps", translateRandomVertexMultiple problem 50;
         //1.0, "trans full fig"", translateFullFigureRandomly problem;
         //1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
     ]
+    

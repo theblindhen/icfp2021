@@ -144,7 +144,7 @@ let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
         |> float
 
 let outsideHoleSegmentPenaltySkia (problem: Problem): Figure -> float =
-    let isInHole = SkiaUtil.isInHole problem.Hole
+    let isInHole = SkiaUtil.isInHole problem.Hole //TODO: Memoize?
     let holeSegments = Model.holeSegments problem
     fun figure ->
         figure.Edges
@@ -191,3 +191,26 @@ let figurePenaltiesToString (problem: Problem): Figure -> string =
             |> List.map (fun p -> sprintf "%.1f" p) 
             |> String.concat " + "
         sprintf $"penalty = {spenalties} = %.1f{List.sum(resPenalties)}"
+
+/// Return a badness for each vertex in the figure, based on the penalties it
+/// incurs.
+let vertexBadness (problem: Problem) =
+    let OUTSIDE_BADNESS = 1000.
+    let isInHole = memoize (SkiaUtil.isInHole problem.Hole)
+    let edgeLengthExcessSq = edgeLengthExcessSq problem
+    let edgeMap = incidentEdgeMap problem.Figure
+    fun (fig: Figure) ->
+        let edgeLenPens =
+            { 0..Array.length fig.Edges-1 }
+            |> Seq.map (fun edgeIdx ->
+                let edge = segmentOfVertexIdxPair fig fig.Edges.[edgeIdx]
+                edgeLengthExcessSq edgeIdx edge)
+            |> Array.ofSeq
+        fig.Vertices
+        |> Array.mapi (fun vertexIdx vertex ->
+            let edgeContribution =
+                Map.find vertexIdx edgeMap
+                |> List.sumBy (fun i -> edgeLenPens.[i])
+            let isOutsideContribution =
+                if isInHole vertex then 0.0 else OUTSIDE_BADNESS
+            edgeContribution + isOutsideContribution)
