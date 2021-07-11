@@ -230,8 +230,8 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
     |> List.rev 
     // Sort the decompositions by intersection point
     |> List.sortBy (function
-        | DecPoint (a, _) -> a
-        | DecOverlap (a,_) -> a)
+        | DecPoint (a, _) -> (a, a)
+        | DecOverlap (a,b) -> (a, b))
 
 
 /// A structure for precomputed set of points in the hole

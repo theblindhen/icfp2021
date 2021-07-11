@@ -11,8 +11,8 @@ let generalSimulatedAnnealing
     (energyFunction: 'state -> float)
     (getRandomNeighbor: Random -> 'state -> 'state)
     (iterations: int)
-    (rnd: Random)
     () =
+        let rnd = Util.getRandom ()
         let i = ref 0
         // TODO: in this way, we end up calling the energy function on the same
         // state many times. Only return something if the state changed.
@@ -24,6 +24,7 @@ let generalSimulatedAnnealing
                 let state' = getRandomNeighbor rnd state
                 let e' = energyFunction state'
                 if e' <= 0.0 then
+                    printfn "Solution found after %d iterations" !i
                     (Some state', e') // solution found
                 else if acceptanceFunction e e' temperature >= rnd.NextDouble() then
                     (Some state', e') // step to next state
@@ -50,7 +51,6 @@ let acceptanceFunctionStandard e e' temperature =
 let simpleSimulatedAnnealing
     (energyFunction: 'state -> float)
     (getRandomNeighbor: Random -> 'state -> 'state)
-    (iterations: int)
-    (rnd: Random) =
+    (iterations: int) =
         generalSimulatedAnnealing acceptanceFunctionSimple temperatureScheduleSimple
-            energyFunction getRandomNeighbor iterations rnd
+            energyFunction getRandomNeighbor iterations

@@ -36,12 +36,17 @@ Install [.NET Core SDK](https://dotnet.microsoft.com/download) on your system.
 - Windows: Use [.NET Core SDK](https://dotnet.microsoft.com/download), select
   version 5.0 for Visual Studio 2019. 
 
-At this point you can build our source code.
+### Building and running from the command line
 
-On Linux/macOS:
+To build and run in debug mode:
 ```
-cd Playground
-dotnet run
+dotnet run -p TheBlindHen
+```
+
+To build and then run in release mode:
+```
+dotnet build -c Release
+dotnet exec TheBlindHen/bin/Release/net5.0/TheBlindHen.dll
 ```
 
 ## Visual Studio Code + F\#
