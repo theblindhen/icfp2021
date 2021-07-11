@@ -3,6 +3,8 @@ module Util
 let _rnd : System.Random option ref = ref None
 let getRandom() = (!_rnd).Value
 
+let _verbose = ref false
+let verbose () = !_verbose
 
 /// Works on all types 'a that can be hashed 
 let memoize (f: 'a -> 'b) =
