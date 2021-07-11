@@ -26,6 +26,7 @@ let fileNameRandomizer = Random()
 
 let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
     dirinfo.EnumerateFiles ()
+    |> Seq.filter (fun f -> f.Name |> Seq.forall Char.IsDigit)
     |> Seq.map (fun f -> int(f.Name))
     |> Seq.sort
     |> Seq.tryHead
