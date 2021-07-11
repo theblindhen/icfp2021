@@ -163,6 +163,14 @@ let dislikesPenalty (problem: Problem): Figure -> float =
     fun figure -> 
         dislikes problem figure |> float     
 
+let isValid (problem: Problem): Figure -> bool =
+    let penalties = [ penaltyEdgeLengthSqSum
+                      outsideHoleEndpointPenalty 
+                      penaltyEdgeRatioOutside
+                    ] |> List.map (fun partPenalty -> partPenalty problem)
+    fun figure ->
+        List.sumBy (fun penalty -> penalty figure) penalties = 0.0
+
 let figurePenalties (problem: Problem): Figure -> float list =
     let penalties = [ 1.0, penaltyEdgeLengthSqSum
                       1.0, outsideHoleEndpointPenalty 

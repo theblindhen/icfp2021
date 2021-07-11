@@ -32,12 +32,10 @@ let stepSolverWithStopAndDebug problem =
             printfn "Reached score 0 and will not advance"
             (figure, figurePenalty)
         else
-            let resultOpt, penalty = stepSolver figure
-            let desc, result =
-                match resultOpt with
-                | None -> NowhereToGo "blah", figure
-                | Some (desc, fig) -> desc, fig
-            match desc with
+            let moveDesc, result, penalty = stepSolver figure
+
+            match moveDesc with
+            | StopCriteria -> printfn $"No more iterations"
             | NowhereToGo desc -> printfn $"Nowhere to go?! by {desc}"
             | RejectedNeighbor desc -> () // printfn $"Rejected move by {desc}"
             | ChoseNeighbor desc -> printfn $"Chose move by {desc}\n\t{figurePenaltiesToString result}"
