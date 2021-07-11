@@ -18,9 +18,17 @@ let stepSolver (problem: Model.Problem) =
 
 let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
     let stepper = stepSolver problem
+    let mutable moveDescs = []
     let rec run i figure =
         let (result, penalty) = stepper figure
         //printfn "  %7d %f" i penalty
+        if i % 1_000 = 0 && i > 0 then
+            printfn $"Iterations {i-1_000}-{i}:"
+            moveDescs
+            |> List.countBy id
+            |> List.iter (fun (desc, c) ->
+                printfn $"  {desc} occured {c} times")
+            moveDescs <- []
         match result with
         | None ->
             printfn "No more iterations left. Penalty %f" penalty
@@ -29,5 +37,6 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
             writeSolution figure
         | Some (desc, figure) ->
             //printfn $"Iteration %d{i}: {desc}"
+            moveDescs <- desc::moveDescs
             run (i + 1) figure
     run 0 problem.Figure
