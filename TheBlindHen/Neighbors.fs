@@ -43,8 +43,7 @@ let rotateRandomArticulationPoint (problem: Problem) =
             Some (Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure)
         else None
  
-let weightedChoice (choices: (float * (Problem -> 'a -> 'b option)) list) (problem: Problem) (param: 'a) : 'b option =
-    let choices = List.map (fun (w, f) -> (w, f problem)) choices
+let weightedChoice (choices: (float * ('a -> 'b option)) list) (param: 'a) : 'b option =
     let totalWeight = List.sumBy fst choices
     let rnd = Util.getRandom ()
     let randomNumber = rnd.NextDouble() * totalWeight
@@ -54,21 +53,27 @@ let weightedChoice (choices: (float * (Problem -> 'a -> 'b option)) list) (probl
         | [] -> failwith "Nowhere to go?!"
         // Make sure we always pick the last choice, even if there was
         // floating-point imprecision.
-        | [ (_, f) ] -> f
+        | [ (_, f) ] -> f param
         | (weight, f) :: tail ->
             let acc = acc + weight
             if randomNumber < acc then
-                f
+                match f param with
+                | None -> iter acc tail
+                | x -> x
             else
                 iter acc tail
-    (iter 0.0 choices) param
+    iter 0.0 choices
 
 /// This should be our main neighbors function that takes a balanced approach to
 /// selecting a reasonable number of neighbors of each kind.
 let balancedCollectionOfNeighbors (problem: Problem) =
     weightedChoice [
-        4.0, translateRandomCoord;
-        1.0, translateFullFigureRandomly;
-        //0.1, rotateFullFigureAroundRandomPoint;
-        //1.0, rotateRandomArticulationPoint
-    ] problem
+        // NOTE: partial neighbor functions should preceed total neighbor functions
+ 
+        // Partial neighbor functions
+        // 1.0, rotateRandomArticulationPoint
+
+        // Total neighbor functions
+        4.0, (translateRandomCoord problem);
+        1.0, (translateFullFigureRandomly problem);
+    ]
