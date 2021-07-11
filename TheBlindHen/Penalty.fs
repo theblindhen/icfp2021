@@ -174,4 +174,8 @@ let figurePenalties (problem: Problem): Figure -> float list =
 let figurePenalty (problem: Problem): Figure -> float =
     let penalties = figurePenalties problem
     fun figure ->
-        List.sum (penalties figure)
+        let pens = penalties figure
+        List.iteri (fun i p ->
+            if p < -EPSILON then
+                printfn $"ERROR: The {i}'th penalty returned negative!!") pens
+        List.sum pens

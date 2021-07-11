@@ -36,9 +36,9 @@ let stepSolverWithStopAndDebug problem =
             let resPenalties = penalties result
             let spenalties =
                 resPenalties
-                |> List.map (fun p -> sprintf "%.2f" p) 
+                |> List.map (fun p -> sprintf "%.1f" p) 
                 |> String.concat " + "
-            printfn $"penalty = {spenalties} = {List.sum(resPenalties)}"
+            printfn $"penalty = {spenalties} = %.1f{List.sum(resPenalties)}"
             (result, penalty)
 
 module MVU =
