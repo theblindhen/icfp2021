@@ -59,6 +59,9 @@ module MVU =
         Selection: int list
         Tool: Tool
         InProgress: ((int * int) * (int * int)) option
+
+        ShowArticulationPoints: bool
+        ShowCutLines: bool
     }
 
     type Msg =
@@ -67,6 +70,8 @@ module MVU =
         | CanvasPressed of Avalonia.Point
         | CanvasReleased of Avalonia.Point
         | CanvasMoved of Avalonia.Point
+        | ToggleShowArticulationPoints of bool
+        | ToggleShowCutLines of bool
 
     let init (problem: Model.Problem): State * Cmd<Msg> =
         let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
@@ -79,6 +84,9 @@ module MVU =
             Tool = Move
             InProgress = None
             Origo = Model.Coord (0, 0)
+
+            ShowArticulationPoints = false
+            ShowCutLines = false
         },
         Cmd.OfFunc.attempt (fun problem ->
                 stepperGlobalVar := Some (stepSolverWithStopAndDebug problem)
@@ -160,6 +168,8 @@ module MVU =
                     { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
         | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
+        | ToggleShowArticulationPoints b -> { state with ShowArticulationPoints = b }, Cmd.none
+        | ToggleShowCutLines b -> { state with ShowCutLines = b }, Cmd.none
     
     let view (state: State) (dispatch) =
         let scale = state.Scale
@@ -237,6 +247,24 @@ module MVU =
                 ]
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
+                    UniformGrid.columns 2
+                    UniformGrid.children [
+                        CheckBox.create [
+                            CheckBox.content "Show articulation points"
+                            CheckBox.isChecked state.ShowArticulationPoints
+                            CheckBox.onChecked (fun evt -> dispatch (ToggleShowArticulationPoints true))
+                            CheckBox.onUnchecked (fun evt -> dispatch (ToggleShowArticulationPoints false))
+                        ]
+                        CheckBox.create [
+                            CheckBox.content "Show cut lines"
+                            CheckBox.isChecked state.ShowCutLines
+                            CheckBox.onChecked (fun evt -> dispatch (ToggleShowCutLines true))
+                            CheckBox.onUnchecked (fun evt -> dispatch (ToggleShowCutLines false))
+                        ]
+                    ]
+                ]
+                UniformGrid.create [
+                    UniformGrid.dock Dock.Bottom
                     UniformGrid.columns 4
                     UniformGrid.children [
                         RadioButton.create [
@@ -296,7 +324,7 @@ module MVU =
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         ) @
-                        (
+                        (if state.ShowArticulationPoints then
                             figure.Vertices
                             |> Array.mapi (fun i c -> (i, c))
                             |> Array.filter (fun (i, _) -> isArticulationPoint.[i])
@@ -308,7 +336,7 @@ module MVU =
                                     Ellipse.width (1.5 * scale)
                                     Ellipse.height (1.5 * scale)
                                     Ellipse.fill "#ADD8E6"
-                                ] :> Avalonia.FuncUI.Types.IView)
+                                ] :> Avalonia.FuncUI.Types.IView) else []
                         ) @
                         (
                             state.Selection
@@ -321,26 +349,27 @@ module MVU =
                                     Ellipse.height (3.0 * scale)
                                     Ellipse.fill "#95a5a6"
                                 ] :> Avalonia.FuncUI.Types.IView)
-                        )  @
-                        (
-                            verticalCutLines
-                            |> List.map (fun (x, _) ->
-                                Line.create [
-                                    Line.startPoint (float x * scale, 0.0)
-                                    Line.endPoint (float x * scale, 2000.0)
-                                    Line.strokeThickness 2.0
-                                    Line.stroke "#D3D3D3"
-                                ] :> Avalonia.FuncUI.Types.IView)
                         ) @
-                        (
-                            horizontalCutLines
-                            |> List.map (fun (y, _) ->
-                                Line.create [
-                                    Line.startPoint (0.0, float y * scale)
-                                    Line.endPoint (2000.0, float y * scale)
-                                    Line.strokeThickness 2.0
-                                    Line.stroke "#D3D3D3"
-                                ] :> Avalonia.FuncUI.Types.IView)
+                        (if state.ShowCutLines then
+                            (
+                                verticalCutLines
+                                |> List.map (fun (x, _) ->
+                                    Line.create [
+                                        Line.startPoint (float x * scale, 0.0)
+                                        Line.endPoint (float x * scale, 2000.0)
+                                        Line.strokeThickness 2.0
+                                        Line.stroke "#D3D3D3"
+                                    ] :> Avalonia.FuncUI.Types.IView)
+                            ) @
+                            (
+                                horizontalCutLines
+                                |> List.map (fun (y, _) ->
+                                    Line.create [
+                                        Line.startPoint (0.0, float y * scale)
+                                        Line.endPoint (2000.0, float y * scale)
+                                        Line.strokeThickness 2.0
+                                        Line.stroke "#D3D3D3"
+                                    ] :> Avalonia.FuncUI.Types.IView)) else []
                         ) @
                         (
                             [
