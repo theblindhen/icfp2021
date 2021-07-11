@@ -39,7 +39,7 @@ let stepSolverWithStopAndDebug problem =
                 | Some (desc, fig) -> desc, fig
             match desc with
             | NowhereToGo -> printfn "Nowhere to go?!"
-            | RejectedNeighbor desc -> // printfn $"Rejected move by {desc}"
+            | RejectedNeighbor desc -> () // printfn $"Rejected move by {desc}"
             | ChoseNeighbor desc -> printfn $"Chose move by {desc}\n\t{figurePenaltiesToString result}"
             (result, penalty)
 
