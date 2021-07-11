@@ -88,7 +88,11 @@ let main args =
                     printSolution
             let bestSolution =
                 getBestCurrentSolution solutionDir
-            FitInHole.solve problem bestSolution writeIfTold
+            match bestSolution with
+            | Some 0 ->
+                printfn "Skipping problem %d, which has a 0-solution" problemNo
+            | _ ->
+                FitInHole.solve problem bestSolution writeIfTold
             0
     | _ ->
         printfn "Must specify both problem path and problem"
