@@ -85,6 +85,17 @@ let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let delta = directions.[rnd.Next(directions.Length)]
     Some (Transformations.translateVerticies delta figure)
 
+let translateFullFigureBest (problem: Problem) = 
+    let penalty = Penalty.figurePenalty problem
+    fun fig ->
+        Some (
+            directions 
+            |> Array.map (fun dir -> Transformations.translateVerticies dir fig)
+            |> Array.map (fun fig -> (fig, penalty fig))
+            |> Array.minBy snd
+            |> fst
+        )
+
 let rotateFullFigureAroundRandomPoint (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let rndIndex = rnd.Next(figure.Vertices.Length)
@@ -192,6 +203,18 @@ let mustImprovePenalty (f: Problem -> (Figure -> option<Figure>)) (problem: Prob
         | Some figure' ->
             if penalties figure' < penalties figure then Some figure' else None
 
+let repeatWhileImproving (f: Problem -> (Figure -> option<Figure>)) (problem: Problem) =
+    let penalty = Penalty.figurePenalty problem
+    let f = f problem
+    fun fig ->
+        let rec inner fig =
+            match f fig with
+            | None -> Some fig
+            | Some fig' ->
+                printfn "Penalty: %f" (penalty fig')
+                if penalty fig' < penalty fig then inner fig' else Some (fig)
+        inner fig
+
 let weightedFunChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : string * 'b option =
     let totalWeight = List.sumBy (fun (w,_,_) -> w) choices
     let rnd = Util.getRandom ()
@@ -231,6 +254,7 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // 0.2, "50 steps", translateRandomBadVertexMultiple problem 50;
 
         0.1, "trans full fig", translateFullFigureRandomly problem;
+        // 1.0, "trans full fig long", repeatWhileImproving translateFullFigureBest problem;
         // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
     ]
     
