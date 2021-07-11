@@ -70,7 +70,6 @@ let connectedComponentsWithoutVertices (adj: bool[,]) (vs: VertexId list) =
     Map.values components
     |> Set.toList
 
-
 let findVerticalCutComponents (adj: bool[,]) (figure: Figure) =
     figure.Vertices
     |> Seq.mapi (fun i c -> (i, c))
@@ -89,4 +88,14 @@ let findHorizontalCutComponents (adj: bool[,]) (figure: Figure) =
         (y, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
     |> Seq.filter (fun (_, components) ->
         List.length components > 1)
+    |> Seq.toList
+
+let findArticulationPointSets (adj: bool[,]) (figure: Figure) =
+    figure.Vertices
+    |> Seq.mapi (fun i c -> (i, c))
+    |> Seq.groupBy (fun (_, c: Coord) -> c)
+    |> Seq.filter (fun (_, vs) -> Seq.length vs > 1)
+    |> Seq.map (fun (c, vs) ->
+        (c, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
+    |> Seq.filter (fun (_, components) -> List.length components > 1)
     |> Seq.toList
