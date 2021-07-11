@@ -16,11 +16,12 @@ let stepSolver (problem: Model.Problem) =
     let getNeighbor = Neighbors.balancedCollectionOfNeighbors problem
     Solver.simulatedAnnealingStepper problem getNeighbor 100_000
 
-let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
+let solve (problem: Model.Problem) (bestPenalty: option<int>) (writeSolution: Model.Figure -> unit) =
     let stepper = stepSolver problem
     let mutable moveDescs = []
     let isValid = Penalty.isValid problem
-    let rec run i figure =
+    let dislikes = Penalty.dislikes problem
+    let rec run i (bestPenalty, bestFigure) figure =
         let (result, figure, penalty) = stepper figure
         //printfn "  %7d %f" i penalty
         if Util.verbose () && i % 1_000 = 0 && i > 0 then
@@ -31,18 +32,27 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
                 printfn $"  {desc} occured {c} times")
             moveDescs <- []
         match result with
-        | _ when i % 10 = 0 && isValid figure ->
-            printfn "Problem solved well enough. Penalty %f" penalty
-            writeSolution figure
         | Model.StopCriteria ->
             printfn "No more iterations left. Penalty %f" penalty
-            if isValid figure then
-                writeSolution figure
+            match bestFigure with
+            | Some figure -> writeSolution figure
+            | None -> ()
         | desc when penalty = 0.0 ->
             printfn "Problem solved perfectly! OMG!"
             writeSolution figure
         | desc ->
+            let isNewBest =
+                penalty < 1_000_000.0 && 
+                (bestPenalty = None || penalty < float bestPenalty.Value) &&
+                isValid figure
+
+            if isNewBest then
+                printfn "Reached new best penalty: %A -> %f" bestPenalty penalty
+                moveDescs <- desc::moveDescs
+                run (i + 1) (Some (dislikes figure), Some figure) figure
+            else
+                moveDescs <- desc::moveDescs
+                run (i + 1) (bestPenalty, bestFigure) figure
+
             //printfn $"Iteration %d{i}: {desc}"
-            moveDescs <- desc::moveDescs
-            run (i + 1) figure
-    run 0 problem.Figure
+    run 0 (bestPenalty, None) problem.Figure

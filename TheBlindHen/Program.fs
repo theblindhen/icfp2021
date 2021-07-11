@@ -32,6 +32,10 @@ let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
     |> Seq.sort
     |> Seq.tryHead
 
+let getBestCurrentSolution solutionDir = 
+    let dirinfo = IO.Directory.CreateDirectory solutionDir
+    bestCurrentSolution dirinfo
+
 let writeSolution solutionDir problem figure =
     let solutionText = Model.deparseSolution(Model.solutionOfFigure(figure))
     let dirinfo = IO.Directory.CreateDirectory solutionDir
@@ -82,7 +86,9 @@ let main args =
                     writeSolution solutionDir problem
                 else
                     printSolution
-            FitInHole.solve problem writeIfTold
+            let bestSolution =
+                getBestCurrentSolution solutionDir
+            FitInHole.solve problem bestSolution writeIfTold
             0
     | _ ->
         printfn "Must specify both problem path and problem"
