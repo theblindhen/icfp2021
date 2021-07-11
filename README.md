@@ -35,6 +35,7 @@ Install [.NET Core SDK](https://dotnet.microsoft.com/download) on your system.
 - Mac OS X: `brew install dotnet-sdk` (or download via above link)
 - Windows: Use [.NET Core SDK](https://dotnet.microsoft.com/download), select
   version 5.0 for Visual Studio 2019. 
+- Ubuntu: [Follow these instructions](https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu), then `sudo apt-get install -y libfontconfig1` to make Skia work.
 
 ### Building and running from the command line
 
