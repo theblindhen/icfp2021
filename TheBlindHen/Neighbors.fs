@@ -32,7 +32,7 @@ let rotateRandomArticulationPoint (problem: Problem) =
         isArticulationPoint
         |> Array.mapi (fun i v -> (i, v))
         |> Array.filter snd
-        |> Array.map (fun (i, _) -> (i, Graph.connectedComponentsWithoutVertex i adj))
+        |> Array.map (fun (i, _) -> (i, Graph.connectedComponentsWithoutVertices adj [i]))
     fun figure ->
         let noArticulationPoints = articulationPointsAndComponents.Length
         if noArticulationPoints > 0 then
@@ -42,7 +42,17 @@ let rotateRandomArticulationPoint (problem: Problem) =
             let selection = List.minBy List.length components
             Some (Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure)
         else None
- 
+
+(*let mirrorAcrossRandomVerticalAxis (problem: Problem) (figure: Figure) =
+    let rnd = Util.getRandom ()
+    let verticalReflectionLines = Graph.findVerticalReflectionLines figure
+    if not(List.isEmpty verticalReflectionLines) then 
+        let rndReflectionLine = verticalReflectionLines.[rnd.Next(verticalReflectionLines.Length)]
+        let 
+        Some (Transformations.mirrorSelectedVerticiesVertically rndReflectionLine figure)
+    else None*)
+
+
 let weightedChoice (choices: (float * ('a -> 'b option)) list) (param: 'a) : 'b option =
     let totalWeight = List.sumBy fst choices
     let rnd = Util.getRandom ()

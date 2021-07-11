@@ -177,7 +177,9 @@ module MVU =
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
         let edgeLengthExcessSq = Penalty.edgeLengthExcessSq state.Problem
-        let _, isArticulationPoint = Graph.getArticulationPoints shownFigure
+        let adj, isArticulationPoint = Graph.getArticulationPoints shownFigure
+        let verticalCutLines = Graph.findVerticalCutComponents adj shownFigure
+        let horizontalCutLines = Graph.findHorizontalCutComponents adj shownFigure
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -327,6 +329,28 @@ module MVU =
                                     Ellipse.height (3.0 * scale)
                                     Ellipse.fill "#95a5a6"
                                 ] :> Avalonia.FuncUI.Types.IView)
+                        )  @
+                        (
+                            verticalCutLines
+                            |> Seq.map (fun (x, _) ->
+                                Line.create [
+                                    Line.startPoint (float x * scale, 0.0)
+                                    Line.endPoint (float x * scale, 2000.0)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#D3D3D3"
+                                ] :> Avalonia.FuncUI.Types.IView)
+                            |> List.ofSeq
+                        ) @
+                        (
+                            horizontalCutLines
+                            |> Seq.map (fun (y, _) ->
+                                Line.create [
+                                    Line.startPoint (0.0, float y * scale)
+                                    Line.endPoint (2000.0, float y * scale)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke "#D3D3D3"
+                                ] :> Avalonia.FuncUI.Types.IView)
+                            |> List.ofSeq
                         ) @
                         (
                             [
