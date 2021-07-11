@@ -4,15 +4,30 @@ open Model
 
 let directions = [| (1, 0); (0, 1); (-1, 0); (0, -1) |]
 
-let translateRandomCoord (problem: Problem) (figure: Figure) =
+let translateRandomCoordOfVertex (problem: Problem) (figure: Figure) (vertexIdx: int) =
     let rnd = Util.getRandom ()
-    let rndIndex = rnd.Next(figure.Vertices.Length)
     let (dx, dy) = directions.[rnd.Next(directions.Length)]
-    let rndCord = Array.item rndIndex figure.Vertices
+    let rndCord = Array.item vertexIdx figure.Vertices
     let newCord = Coord(rndCord.X + dx, rndCord.Y + dy)
     let newFigure = copyFigureVerticies figure
-    Array.set newFigure.Vertices rndIndex newCord
+    Array.set newFigure.Vertices vertexIdx newCord
     Some (newFigure)
+
+/// Take a random vertex and take a single move in a random direction
+let translateRandomCoord (problem: Problem) (figure: Figure) =
+    let rnd = Util.getRandom ()
+    let vertexIdx = rnd.Next(figure.Vertices.Length)
+    translateRandomCoordOfVertex problem figure vertexIdx
+
+/// Take a random vertex and take a multiple moves according to a meta-heuritic
+let translateCoordMultiple (problem: Problem) (moves: int) (figure: Figure) =
+    let rnd = Util.getRandom ()
+    let vertexIdx = rnd.Next(figure.Vertices.Length)
+    let getNeighbor = (fun fig -> translateRandomCoordOfVertex problem fig vertexIdx)
+    // TODO: Temperature control of the local simulated annealing?
+    let stepper = Solver.simulatedAnnealingStepper problem getNeighbor moves
+    Solver.runSolver stepper figure
+
 
 let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
