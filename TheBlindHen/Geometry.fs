@@ -271,36 +271,3 @@ type HolePoints = {
 //         false
 //     else 
 //         hole.Arr.[lX, lY]
-
-let getArticulationPoints (figure : Figure) =
-    let adj = Array2D.create (figure.Vertices.Length) (figure.Vertices.Length) false
-    let disc : int array = Array.zeroCreate (figure.Vertices.Length)
-    let low : int array = Array.create (figure.Vertices.Length) (System.Int32.MaxValue)
-    let visited : bool array = Array.create (figure.Vertices.Length) false
-    let parent : VertexId array = Array.create (figure.Vertices.Length) (-1)
-    let articulationPoint : bool array = Array.create (figure.Vertices.Length) false
-
-    for (a,b) in figure.Edges do
-        adj.[a,b] <- true
-        adj.[b,a] <- true
-
-    let rec dfs (vertex : VertexId) (time: int) =
-        visited.[vertex] <- true
-        disc.[vertex] <- time+1
-        low.[vertex] <- time+1
-        let mutable child = 0
-        for i in 0..figure.Vertices.Length - 1 do
-            if adj.[vertex,i] then
-                if not visited.[i] then
-                    child <- child + 1
-                    parent.[i] <- vertex
-                    dfs i (time + 1)
-                    low.[vertex] <- min low.[vertex] low.[i]
-                    if parent.[vertex] = -1 && child > 1 then
-                        articulationPoint.[vertex] <- true
-                    if parent.[vertex] <> -1 && low.[i] >= disc.[vertex] then
-                        articulationPoint.[vertex] <- true
-                else if parent.[vertex] <> i then
-                    low.[vertex] <- min low.[vertex] disc.[i]
-    dfs 0 0
-    (adj, disc, low, visited, parent, articulationPoint)
