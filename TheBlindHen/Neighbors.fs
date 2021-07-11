@@ -225,12 +225,12 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
-        4.0, "single step", translateRandomVertex problem;
-        // 1.5, "10 steps", translateRandomVertexMultiple problem 10;
-        // 0.5, "25 steps", translateRandomVertexMultiple problem 25;
-        // 0.2, "50 steps", translateRandomVertexMultiple problem 50;
+        4.0, "single step", translateRandomBadVertex problem;
+        // 1.5, "10 steps", translateRandomBadVertexMultiple problem 10;
+        // 0.5, "25 steps", translateRandomBadVertexMultiple problem 25;
+        // 0.2, "50 steps", translateRandomBadVertexMultiple problem 50;
 
-        1.0, "trans full fig", translateFullFigureRandomly problem;
+        0.1, "trans full fig", translateFullFigureRandomly problem;
         // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
     ]
     
