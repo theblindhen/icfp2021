@@ -24,13 +24,10 @@ let translateRandomCoordMultiple (problem: Problem) (moves: int) (figure: Figure
     let rnd = Util.getRandom ()
     let vertexIdx = rnd.Next(figure.Vertices.Length)
     let getNeighbor = (fun fig ->
-        match translateRandomCoordOfVertex problem fig vertexIdx with
-        | None -> None
-        | Some fig -> Some ("_translateRandomCoordMultiple", fig))
+        ("_translateRandomCoordMultiple", translateRandomCoordOfVertex problem fig vertexIdx))
     // TODO: Temperature control of the local simulated annealing?
     let stepper = Solver.simulatedAnnealingStepper problem getNeighbor moves
     Some (Solver.runSolver stepper figure)
-
 
 let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
@@ -42,6 +39,17 @@ let rotateFullFigureAroundRandomPoint (problem: Problem) (figure: Figure) =
     let rndIndex = rnd.Next(figure.Vertices.Length)
     let rndCord = Array.item rndIndex figure.Vertices
     Some (Transformations.rotateVerticiesAround rndCord figure)
+
+let rotateFullFigureAroundBestPoint (problem: Problem) =
+    let penalty = Penalty.figurePenalty problem
+    fun figure ->
+        let bestRot =
+            figure.Vertices
+            |> Array.toList
+            |> List.collect (fun c ->
+                Transformations.rotateVerticiesAround3 c figure)
+            |> List.minBy penalty
+        if penalty bestRot < penalty figure then Some bestRot else None
 
 let rotateRandomArticulationPoint (problem: Problem) =
     let rnd = Util.getRandom ()
@@ -94,7 +102,16 @@ let mirrorAcrossRandomHorizontalCutLine (problem: Problem) =
             Some (Transformations.mirrorSelectedVerticiesHorizontally rndComponent y figure)
         else None
 
-let weightedChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : (string * 'b) option =
+let mustImprovePenalty (f: Problem -> (Figure -> option<Figure>)) (problem: Problem) =
+    let f = f problem
+    let penalties = Penalty.figurePenalty problem
+    fun figure ->
+        match f figure with
+        | None -> None
+        | Some figure' ->
+            if penalties figure' < penalties figure then Some figure' else None
+
+let weightedChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : string * 'b option =
     let totalWeight = List.sumBy (fun (w,_,_) -> w) choices
     let rnd = Util.getRandom ()
     let randomNumber = rnd.NextDouble() * totalWeight
@@ -104,16 +121,11 @@ let weightedChoice (choices: (float * string * ('a -> 'b option)) list) (param: 
         | [] -> failwith "Nowhere to go?!"
         // Make sure we always pick the last choice, even if there was
         // floating-point imprecision.
-        | [ (_, desc, f) ] ->
-            match f param with
-            | None -> None
-            | Some x -> Some (desc, x)
+        | [ (_, desc, f) ] -> (desc, f param)
         | (weight, desc, f) :: tail ->
             let acc = acc + weight
             if randomNumber < acc then
-                match f param with
-                | None -> iter acc tail
-                | Some x -> Some (desc, x)
+                (desc, f param)
             else
                 iter acc tail
     iter 0.0 choices
@@ -125,9 +137,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        //1.0, "rot articulation point", rotateRandomArticulationPoint problem;
-        //1.0, "mirror vertical cut", mirrorAcrossRandomVerticalCutLine problem;
-        //1.0, "mirror horizontal cut", mirrorAcrossRandomHorizontalCutLine problem;
+        0.01, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
+        0.01, "mirror vertical cut", mustImprovePenalty mirrorAcrossRandomVerticalCutLine problem;
+        0.01, "mirror horizontal cut", mustImprovePenalty mirrorAcrossRandomHorizontalCutLine problem;
+        0.01, "rot full fig (try all points)", rotateFullFigureAroundBestPoint problem;
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
