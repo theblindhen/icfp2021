@@ -4,7 +4,8 @@ open Model
 
 let directions = [| (1, 0); (0, 1); (-1, 0); (0, -1) |]
 
-let translateRandomCoord (rnd: System.Random) (figure: Figure) =
+let translateRandomCoord (problem: Problem) (figure: Figure) =
+    let rnd = Util.getRandom ()
     let rndIndex = rnd.Next(figure.Vertices.Length)
     let (dx, dy) = directions.[rnd.Next(directions.Length)]
     let rndCord = Array.item rndIndex figure.Vertices
@@ -13,33 +14,39 @@ let translateRandomCoord (rnd: System.Random) (figure: Figure) =
     Array.set newFigure.Vertices rndIndex newCord
     newFigure
 
-let translateFullFigureRandomly (rnd: System.Random) (figure: Figure) =
+let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
+    let rnd = Util.getRandom ()
     let delta = directions.[rnd.Next(directions.Length)]
     Transformations.translateVerticies delta figure
 
-let rotateFullFigureAroundRandomPoint (rnd: System.Random) (figure: Figure) =
+let rotateFullFigureAroundRandomPoint (problem: Problem) (figure: Figure) =
+    let rnd = Util.getRandom ()
     let rndIndex = rnd.Next(figure.Vertices.Length)
     let rndCord = Array.item rndIndex figure.Vertices
     Transformations.rotateVerticiesAround rndCord figure
 
-let rotateRandomArticulationPoint (rnd: System.Random) (figure: Figure) =
-    let adj, isArticulationPoint = Graph.getArticulationPoints figure
+let rotateRandomArticulationPoint (problem: Problem) =
+    let rnd = Util.getRandom ()
+    let adj, isArticulationPoint = Graph.getArticulationPoints problem.Figure
     let articulationPoints =
         isArticulationPoint
         |> Array.mapi (fun i v -> (i, v))
         |> Array.filter snd
         |> Array.map fst
-    if not (Array.isEmpty articulationPoints) then
-        let rndArticulationPoint = articulationPoints.[rnd.Next(articulationPoints.Length)]
-        let rndArticulationPointCoord = figure.Vertices.[rndArticulationPoint]
-        let components = Graph.connectedComponentsWithoutVertex rndArticulationPoint adj
-        printfn $"{components}"
-        let selection = List.minBy List.length components
-        Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure
-    else figure
+    fun figure ->
+        if not (Array.isEmpty articulationPoints) then
+            let rndArticulationPoint = articulationPoints.[rnd.Next(articulationPoints.Length)]
+            let rndArticulationPointCoord = figure.Vertices.[rndArticulationPoint]
+            let components = Graph.connectedComponentsWithoutVertex rndArticulationPoint adj
+            printfn $"{components}"
+            let selection = List.minBy List.length components
+            Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure
+        else figure
  
-let weightedChoice (choices: (float * (System.Random -> 'a -> 'b)) list) (rnd: System.Random) (param: 'a) : 'b =
+let weightedChoice (choices: (float * (Problem -> 'a -> 'b)) list) (problem: Problem) (param: 'a) : 'b =
+    let choices = List.map (fun (w, f) -> (w, f problem)) choices
     let totalWeight = List.sumBy fst choices
+    let rnd = Util.getRandom ()
     let randomNumber = rnd.NextDouble() * totalWeight
     let rec iter acc =
         function
@@ -54,14 +61,14 @@ let weightedChoice (choices: (float * (System.Random -> 'a -> 'b)) list) (rnd: S
                 f
             else
                 iter acc tail
-    (iter 0.0 choices) rnd param
+    (iter 0.0 choices) param
 
 /// This should be our main neighbors function that takes a balanced approach to
 /// selecting a reasonable number of neighbors of each kind.
-let balancedCollectionOfNeighbors (rnd: System.Random) (figure: Figure) =
+let balancedCollectionOfNeighbors (problem: Problem) =
     weightedChoice [
         4.0, translateRandomCoord;
         1.0, translateFullFigureRandomly;
         //0.1, rotateFullFigureAroundRandomPoint;
         //1.0, rotateRandomArticulationPoint
-    ] rnd figure
+    ] problem
