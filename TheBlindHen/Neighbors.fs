@@ -100,5 +100,5 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // Total neighbor functions
         4.0, (translateRandomCoord problem);
         1.0, (translateFullFigureRandomly problem);
-        1.0, (rotateFullFigureAroundRandomPoint problem);
+        //1.0, (rotateFullFigureAroundRandomPoint problem);
     ]
