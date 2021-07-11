@@ -44,7 +44,7 @@ let getArticulationPoints (figure : Figure) =
     (adj, articulationPoint)
 
 
-let connectedComponentsWithoutVertex (v: VertexId) (adj: bool[,]) =
+let connectedComponentsWithoutVertices (adj: bool[,]) (vs: VertexId list) =
     let noVertices = Array2D.length1 adj
     let visited : bool array = Array.create noVertices false
     let mutable components: Map<int, VertexId list> = Map.empty
@@ -56,11 +56,33 @@ let connectedComponentsWithoutVertex (v: VertexId) (adj: bool[,]) =
                 components <- Map.add componentIdx (i::Map.find componentIdx components) components
                 dfs i componentIdx
 
-    visited.[v] <- true
-    for i in 0..noVertices - 1 do
-        if adj.[v,i] && not(visited.[i]) then
-            components <- Map.add i [i] components
-            dfs i i
+    for v in vs do
+        visited.[v] <- true
+
+    for v in 0..noVertices - 1 do
+        if not(visited.[v]) then
+            components <- Map.add v [v] components
+            dfs v v
 
     Map.values components
     |> Set.toList
+
+
+let findVerticalCutComponents (adj: bool[,]) (figure: Figure) =
+    figure.Vertices
+    |> Seq.mapi (fun i c -> (i, c))
+    |> Seq.groupBy (fun (_, c: Coord) -> c.X)
+    |> Seq.map (fun (x, vs) ->
+        (x, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
+    |> Seq.filter (fun (_, components) ->
+        List.length components > 1)
+
+
+let findHorizontalCutComponents (adj: bool[,]) (figure: Figure) =
+    figure.Vertices
+    |> Seq.mapi (fun i c -> (i, c))
+    |> Seq.groupBy (fun (_, c: Coord) -> c.Y)
+    |> Seq.map (fun (y, vs) ->
+        (y, connectedComponentsWithoutVertices adj (Seq.map fst vs |> List.ofSeq)))
+    |> Seq.filter (fun (_, components) ->
+        List.length components > 1)
