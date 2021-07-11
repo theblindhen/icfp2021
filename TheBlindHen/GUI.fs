@@ -12,7 +12,7 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: ((Model.Figure * float) -> (Model.Figure * float)) option ref = ref None
 
-let solutionPath: string option ref = ref None
+let solutionDirGlobalVar: string option ref = ref None
 
 let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
@@ -116,7 +116,7 @@ module MVU =
             state,
             Cmd.OfFunc.attempt
                 (fun s ->
-                    match !solutionPath with
+                    match !solutionDirGlobalVar with
                     | None -> ()
                     | Some path ->
                         // TODO: move this outside the GUI
@@ -380,12 +380,9 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui (problemPath: string) (problemNo: int) =
-        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
-        printfn "%A" problem
-
+let showGui (problem: Model.Problem) (solutionDir: string) =
         problemGlobalVar := Some problem 
-        solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
+        solutionDirGlobalVar := Some solutionDir
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()

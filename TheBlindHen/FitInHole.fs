@@ -22,9 +22,7 @@ let stepSolver (problem: Model.Problem) =
     let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 rnd ()
     step
 
-let solve (problemPath: string) (problemNo: int) =
-    let problem = Model.parseFile $"{problemPath}/{problemNo}.problem" // TODO: call from GUI
-    //let solutionPath = Some ($"{problemPath}/{problemNo}-solutions/")
+let solve (problem: Model.Problem) (solutionDir: string) =
     let stepper = stepSolver problem
     let rec run i figure =
         let (result, penalty) = stepper figure
