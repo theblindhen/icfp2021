@@ -124,33 +124,26 @@ let penaltyEdgeRatioOutside (problem: Problem) =
         |> List.map (fun seg -> (seg, segmentOutsideHole seg))
         |> List.sumBy (fun (seg, ratio) -> ratio * float (segmentLengthSq seg))
 
-let holeAsPath (problem: Problem) =
-    let path = new SkiaSharp.SKPath()
-    let points = problem.Hole
-    path.MoveTo(float32 points.[0].X, float32 points.[0].Y)
-    for i in 1 .. points.Length - 1 do
-        path.LineTo(float32 points.[i].X, float32 points.[i].Y)
-    path.Close()
-    path
-
 let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
-    let hole = holeAsPath problem
+    let isInHole = SkiaUtil.isInHole problem.Hole
+    let vertexPenalty = memoize(fun (c: Coord) ->
+        let minDist = Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc))
+                                  problem.Hole
+        segmentLengthSq (c, minDist))
     fun figure ->
         figure.Vertices
-        |> Array.filter (fun (c: Coord) -> not (hole.Contains(float32 c.X, float32 c.Y)))
-        |> Array.sumBy (fun (c: Coord) ->
-                segmentLengthSq (c, Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc)) problem.Hole))
+        |> Array.filter (isInHole >> not)
+        |> Array.sumBy vertexPenalty
         |> float
 
 let outsideHoleSegmentPenaltySkia (problem: Problem): Figure -> float =
-    let hole = holeAsPath problem
-    let contains (c: Coord) = hole.Contains (float32 c.X, float32 c.Y)
+    let isInHole = SkiaUtil.isInHole problem.Hole
     let holeSegments = Model.holeSegments problem
     fun figure ->
         figure.Edges
         |> Array.sumBy (fun (s, t) ->
             let sc, tc = figure.Vertices.[s], figure.Vertices.[t]
-            if contains sc && contains tc && segmentIntersectionList (sc, tc) holeSegments <> [] then
+            if isInHole sc && isInHole tc && segmentIntersectionList (sc, tc) holeSegments <> [] then
                 segmentLengthSq (sc, tc) |> float
             else 0.0)
 
