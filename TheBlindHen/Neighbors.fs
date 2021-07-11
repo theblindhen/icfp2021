@@ -46,7 +46,7 @@ let translateRandomCoordOfVertex (figure: Figure) (vertexIdx: int) =
     Some (newFigure)
 
 /// Take a random vertex and take a single move in a random direction
-let translateRandomCoord (problem: Problem) (figure: Figure) =
+let translateRandomVertex (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let vertexIdx = rnd.Next(figure.Vertices.Length)
     translateRandomCoordOfVertex figure vertexIdx
@@ -225,10 +225,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
-        4.0, "single step", translateRandomBadVertex problem;
-        1.5, "10 steps", translateRandomVertexMultiple problem 10;
-        0.5, "25 steps", translateRandomVertexMultiple problem 25;
-        0.2, "50 steps", translateRandomVertexMultiple problem 50;
+        4.0, "single step", translateRandomVertex problem;
+        // 1.5, "10 steps", translateRandomVertexMultiple problem 10;
+        // 0.5, "25 steps", translateRandomVertexMultiple problem 25;
+        // 0.2, "50 steps", translateRandomVertexMultiple problem 50;
 
         1.0, "trans full fig", translateFullFigureRandomly problem;
         // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
