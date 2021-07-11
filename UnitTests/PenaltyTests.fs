@@ -65,6 +65,14 @@ type SegmentOutsideHoleTestClass () =
             seg (0, 20) (20, 0)
         ]
 
+    let triangleWithHump = [
+        seg (20,0) (20,10)
+        seg (20,10) (30,10)
+        seg (30,10) (30, 20)
+        seg (30, 20) (0, 20)
+        seg (0,20) (20, 0)
+    ]
+
     [<TestMethod>]
     member this.TestIsCoordInsideHole1 () = 
         Assert.AreEqual(true, isCoordInsideHole testHole1 (Coord(1,1)))
@@ -160,6 +168,16 @@ type SegmentOutsideHoleTestClass () =
     member this.TestSegmentStartsInside10 () = 
         let segment = seg (20,5) (20,19)
         Assert.IsTrue(segmentStartsInside largeDiamond segment)
+
+    [<TestMethod>]
+    member this.TestSegmentStartsInside11 () =
+        let seg = seg (20, 0) (20, 15)
+        Assert.IsFalse(segmentStartsInside triangleWithHump seg)
+
+    [<TestMethod>]
+    member this.TestSegmentStartsInside12 () =
+        let seg = seg (20, 15) (20, 0)
+        Assert.IsTrue(segmentStartsInside triangleWithHump seg)
 
 
 
@@ -273,6 +291,16 @@ type SegmentOutsideHoleTestClass () =
     member this.TestSegmentOutsideHole22 () = 
         let seg = seg (20, 6) (20, 37)
         Assert.AreEqual(0.0, segmentOutsideHole largeDiamond seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole23 () = 
+        let seg = seg (20, 15) (20, 0)
+        Assert.AreEqual(0.0, segmentOutsideHole triangleWithHump seg, EPSILON)
+
+    [<TestMethod>]
+    member this.TestSegmentOutsideHole24 () = 
+        let seg = seg (20, 0) (20, 15)
+        Assert.AreEqual(0.0, segmentOutsideHole triangleWithHump seg, EPSILON)
 
     [<TestMethod>]
     member this.TestSortSegments () =
