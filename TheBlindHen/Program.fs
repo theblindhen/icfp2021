@@ -22,17 +22,27 @@ let argSpecs =
 // same random seed here. Mix with process id?
 let fileNameRandomizer = Random()
 
-let writeSolution solutionDir figure =
+let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
+    dirinfo.EnumerateFiles ()
+    |> Seq.map (fun f -> int(f.Name))
+    |> Seq.sort
+    |> Seq.tryHead
+
+let writeSolution solutionDir problem figure =
     let solutionText = Model.deparseSolution(Model.solutionOfFigure(figure))
     let dirinfo = IO.Directory.CreateDirectory solutionDir
+    let dislikes = Penalty.dislikesPenalty problem figure
+    let solutionFile = sprintf "%s%d" solutionDir dislikes
     // Write the file only if the directory is empty
-    if Seq.isEmpty (dirinfo.EnumerateFiles()) then
-        let postfix = fileNameRandomizer.Next(999999)
-        let solutionFile = sprintf "%s%06d" solutionDir postfix
-        printfn "Writing solution to %s" solutionFile
+    match bestCurrentSolution dirinfo with
+    | None ->
+        printfn "Found a new solution (dislikes: %d). Writing solution to %s" dislikes solutionFile
         IO.File.WriteAllText(solutionFile, solutionText)
-    else
-        printfn "A solution file exists. Not writing a new file. Solution:"
+    | Some(best) when dislikes < best ->
+        printfn "Found a better solution (dislikes: %d -> %d). Writing solution to %s" best dislikes solutionFile
+        IO.File.WriteAllText(solutionFile, solutionText)
+    | _ ->
+        printfn "A better solution already exists. Not writing a new file. Solution:"
         printfn "%s" solutionText
 
 let printSolution figure =
@@ -53,11 +63,11 @@ let main args =
         let problem = Model.parseFile file
         let solutionDir = $"{problemPath}/{problemNo}-solutions/"
         if !gui then
-            GUI.showGui problem (writeSolution solutionDir)
+            GUI.showGui problem (writeSolution solutionDir problem)
         else
             let writeIfTold =
                 if !writeToFile then
-                    writeSolution solutionDir
+                    writeSolution solutionDir problem
                 else
                     printSolution
             FitInHole.solve problem writeIfTold
