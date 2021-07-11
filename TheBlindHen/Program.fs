@@ -26,6 +26,7 @@ let fileNameRandomizer = Random()
 
 let bestCurrentSolution (dirinfo: IO.DirectoryInfo) =
     dirinfo.EnumerateFiles ()
+    |> Seq.filter (fun f -> f.Name |> Seq.forall Char.IsDigit)
     |> Seq.map (fun f -> int(f.Name))
     |> Seq.sort
     |> Seq.tryHead
@@ -43,8 +44,8 @@ let writeSolution solutionDir problem figure =
     | Some(best) when dislikes < best ->
         printfn "Found a better solution (dislikes: %d -> %d). Writing solution to %s" best dislikes solutionFile
         IO.File.WriteAllText(solutionFile, solutionText)
-    | _ ->
-        printfn "A better solution already exists. Not writing a new file. Solution:"
+    | Some(best) ->
+        printfn "A better solution already exists (dislikes: %d). Not writing a new file. Solution (dislikes: %d):" best dislikes
         printfn "%s" solutionText
 
 let printSolution figure =
