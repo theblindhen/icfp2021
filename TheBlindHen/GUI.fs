@@ -176,6 +176,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
+        let edgeLengthExcessSq = Penalty.edgeLengthExcessSq state.Problem
         let _, isArticulationPoint = Graph.getArticulationPoints shownFigure
         DockPanel.create [
             DockPanel.children [
@@ -279,13 +280,20 @@ module MVU =
                         (
                             figure.Edges
                             |> Array.toList
-                            |> List.map (fun (s,t) ->
+                            |> List.mapi (fun edgeIdx (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
                                 let outsideHolePenalty = segmentOutsideHole (sc, tc)
+                                let edgeLengthPenalty = edgeLengthExcessSq edgeIdx (sc, tc) 
                                 let color =
                                     if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
                                     else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
-                                    else "#00FF00"
+                                    else
+                                        if edgeLengthPenalty < -Geometry.EPSILON then
+                                            "#88FF88"
+                                        else if edgeLengthPenalty > Geometry.EPSILON then
+                                            "#00AA00"
+                                        else
+                                            "#00FF00"
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)

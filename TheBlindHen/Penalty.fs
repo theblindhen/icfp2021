@@ -15,22 +15,29 @@ let problemEdgeLengthSqRanges (problem: Problem) =
             (float len) * (1. + (float problem.Epsilon)/1000000.)))
     |> Array.ofList
 
+/// Returns the diff btw an edgeLenSq and the allowed lenSq range for the problem.
+/// If it is too short, the number is negative, if too long, positive.
+/// WARNING: Remember to call abs on the result for use in a penalty!
+let edgeLengthExcessSq (problem: Problem) =
+    let edgeSqRanges = problemEdgeLengthSqRanges problem
+    fun (edgeIdx: int) (edge: Segment) ->
+        let (min, max) = edgeSqRanges.[edgeIdx]
+        let lensq = float (segmentLengthSq edge)
+        if lensq >= min && lensq <= max then
+            0.0
+        else
+            if lensq < min then
+                lensq - min //Negative: too short
+            else
+                lensq - max //Positive: too long
+
 /// Return the sum of how much each edge's sq-length is outside the allowed range
 let penaltyEdgeLengthSqSum (problem: Problem) =
-    let edgeSqRanges = problemEdgeLengthSqRanges problem
+    let edgeLengthExcessSq = edgeLengthExcessSq problem
     fun (fig: Figure) ->
         figureSegments fig
-        |> List.map (segmentLengthSq >> float)
-        |> List.mapi (fun i lensq ->
-            let (min, max) = edgeSqRanges.[i]
-            if lensq >= min && lensq <= max then
-                0.0
-            else
-                if lensq < min then
-                    min - lensq
-                else
-                    lensq - max)
-        |> List.sum
+        |> List.mapi edgeLengthExcessSq
+        |> List.sumBy abs
 
 /// Return the sum of each edge's ratio to the allowed range
 let penaltyEdgeRatioSum (problem: Problem) =
