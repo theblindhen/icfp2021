@@ -158,3 +158,18 @@ let figureBoundingBox (figure: Figure) =
     let maxx = xs |> Array.max
     let maxy = ys |> Array.max
     (Coord (minx, miny), Coord (maxx, maxy))
+
+// Return a Map from vertexId to a list of edgeIds
+let incidentEdgeMap (figure: Figure) =
+    let map = 
+        Seq.fold (fun map i -> Map.add i [] map) Map.empty {0..figure.Vertices.Length}
+    let addEdge v e map =
+        Map.add v (e::(Map.findOrDefault [] v map)) map
+    Array.foldi (fun map i (v1, v2) ->
+        map
+        |> addEdge v1 i
+        |> addEdge v2 i
+    ) map figure.Edges
+
+let segmentOfVertexIdxPair (figure: Figure) (v1: VertexId, v2: VertexId) =
+    (figure.Vertices.[v1], figure.Vertices.[v2])

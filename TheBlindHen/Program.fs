@@ -15,6 +15,7 @@ let argSpecs =
     ; "-p", ArgType.Int (fun p -> problemNo := Some p), "Problem number"
     ; "-g", ArgType.Unit (fun () -> gui := true), "Show GUI"
     ; "-w", ArgType.Unit (fun () -> writeToFile := true), "Write solution to file"
+    ; "-v", ArgType.Unit (fun () -> Util._verbose := true), "Verbose"
     ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
     ; "-sol", ArgType.String (fun sol -> solution := Some sol), "Don't run, but score the input solution to the given problem"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
