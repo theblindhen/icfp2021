@@ -12,7 +12,7 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: ((Model.Figure * float) -> (Model.Figure * float)) option ref = ref None
 
-let solutionDirGlobalVar: string option ref = ref None
+let writeSolutionGlobalVar: (Model.Figure -> unit) option ref = ref None
 
 let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
@@ -43,7 +43,6 @@ let stepSolverWithStopAndDebug problem =
 
 module MVU =
     open Elmish
-    open System.IO
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
@@ -115,16 +114,10 @@ module MVU =
         | Save ->
             state,
             Cmd.OfFunc.attempt
-                (fun s ->
-                    match !solutionDirGlobalVar with
-                    | None -> ()
-                    | Some path ->
-                        // TODO: move this outside the GUI
-                        let postfix = FitInHole.rnd.Next(999999)
-                        let solutionFile = sprintf "%s%6d" path postfix
-                        Directory.CreateDirectory path |> ignore
-                        printfn "Wrote solution to %s" solutionFile
-                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(fst s.History.[s.Index]))))
+                (fun state ->
+                    let figure = fst state.History.[state.Index]
+                    let writeSolution = Option.get !writeSolutionGlobalVar
+                    writeSolution figure)
                 state
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
@@ -380,9 +373,9 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui (problem: Model.Problem) (solutionDir: string) =
+let showGui (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
         problemGlobalVar := Some problem 
-        solutionDirGlobalVar := Some solutionDir
+        writeSolutionGlobalVar := Some writeSolution
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
