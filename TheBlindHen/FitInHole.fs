@@ -19,6 +19,7 @@ let stepSolver (problem: Model.Problem) =
 let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
     let stepper = stepSolver problem
     let mutable moveDescs = []
+    let isValid = Penalty.isValid problem
     let rec run i figure =
         let (result, figure, penalty) = stepper figure
         //printfn "  %7d %f" i penalty
@@ -30,9 +31,12 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
                 printfn $"  {desc} occured {c} times")
             moveDescs <- []
         match result with
+        | _ when i % 10 = 0 && isValid figure ->
+            printfn "Problem solved well enough. Penalty %f" penalty
+            writeSolution figure
         | Model.StopCriteria ->
             printfn "No more iterations left. Penalty %f" penalty
-            if Penalty.isValid problem figure then
+            if isValid figure then
                 writeSolution figure
         | desc when penalty = 0.0 ->
             printfn "Problem solved perfectly! OMG!"
