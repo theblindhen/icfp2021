@@ -29,8 +29,8 @@ let getRandomBadVertexIdx (problem: Problem) =
         let badChoices =
             badness
             |> Array.toList
-            |> List.filter (fun pen -> pen > 0.0)
             |> List.indexed
+            |> List.filter (fun (_,pen) -> pen > 0.0)
             |> List.map (fun (idx, pen) -> (sqrt (pen), idx))
         match badChoices with
         | [] -> None
