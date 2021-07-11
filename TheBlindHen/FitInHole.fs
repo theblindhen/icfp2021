@@ -23,7 +23,7 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
         let (result, penalty) = stepper figure
         //printfn "  %7d %f" i penalty
         if i % 1_000 = 0 && i > 0 then
-            printfn $"Iterations {i-1_000}-{i}:"
+            printfn $"Iterations {i-1_000}-{i}: (penalty: {penalty})"
             moveDescs
             |> List.countBy id
             |> List.iter (fun (desc, c) ->
