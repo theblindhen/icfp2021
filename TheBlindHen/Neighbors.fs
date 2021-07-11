@@ -36,7 +36,7 @@ let rotateRandomArticulationPoint (problem: Problem) =
     fun figure ->
         let noArticulationPoints = articulationPointsAndComponents.Length
         if noArticulationPoints > 0 then
-            let rndArticulationPoint, components = articulationPointsAndComponents.[noArticulationPoints]
+            let rndArticulationPoint, components = articulationPointsAndComponents.[rnd.Next(noArticulationPoints)]
             let rndArticulationPointCoord = figure.Vertices.[rndArticulationPoint]
             // TODO: consider if it makes sense to pick the larger component in some cases
             let selection = List.minBy List.length components
@@ -71,7 +71,7 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        // 1.0, rotateRandomArticulationPoint
+        //1.0, (rotateRandomArticulationPoint problem);
 
         // Total neighbor functions
         4.0, (translateRandomCoord problem);
