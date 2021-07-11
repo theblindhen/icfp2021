@@ -12,7 +12,7 @@ let problemGlobalVar: Model.Problem option ref = ref None
 // Avalonia FuncUI.
 let stepperGlobalVar: ((Model.Figure * float) -> (Model.Figure * float)) option ref = ref None
 
-let solutionPath: string option ref = ref None
+let writeSolutionGlobalVar: (Model.Figure -> unit) option ref = ref None
 
 let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
     let dist (coord: Model.Coord) =
@@ -43,7 +43,6 @@ let stepSolverWithStopAndDebug problem =
 
 module MVU =
     open Elmish
-    open System.IO
     open Avalonia.Controls
     open Avalonia.Controls.Primitives
     open Avalonia.FuncUI.DSL
@@ -115,16 +114,10 @@ module MVU =
         | Save ->
             state,
             Cmd.OfFunc.attempt
-                (fun s ->
-                    match !solutionPath with
-                    | None -> ()
-                    | Some path ->
-                        // TODO: move this outside the GUI
-                        let postfix = FitInHole.rnd.Next(999999)
-                        let solutionFile = sprintf "%s%6d" path postfix
-                        Directory.CreateDirectory path |> ignore
-                        printfn "Wrote solution to %s" solutionFile
-                        File.WriteAllText(solutionFile, Model.deparseSolution(Model.solutionOfFigure(fst s.History.[s.Index]))))
+                (fun state ->
+                    let figure = fst state.History.[state.Index]
+                    let writeSolution = Option.get !writeSolutionGlobalVar
+                    writeSolution figure)
                 state
                 (fun _ -> Id)
         | ZoomIn -> { state with Scale = state.Scale * 1.50 }, Cmd.none
@@ -183,6 +176,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
+        let _, _, _, _, _, articulationPoints = Geometry.getArticulationPoints shownFigure
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -301,6 +295,20 @@ module MVU =
                             )
                         ) @
                         (
+                            figure.Vertices
+                            |> Array.mapi (fun i c -> (i, c))
+                            |> Array.filter (fun (i, _) -> articulationPoints.[i])
+                            |> Array.toList
+                            |> List.map (fun (_, c) ->
+                                Ellipse.create [
+                                    Ellipse.left (float(c.X) * scale - (0.75 * scale))
+                                    Ellipse.top (float(c.Y) * scale - (0.75 * scale))
+                                    Ellipse.width (1.5 * scale)
+                                    Ellipse.height (1.5 * scale)
+                                    Ellipse.fill "#ADD8E6"
+                                ] :> Avalonia.FuncUI.Types.IView)
+                        ) @
+                        (
                             state.Selection
                             |> List.map (fun i ->
                                 let c = vs.[i]
@@ -380,12 +388,9 @@ type App() =
             desktopLifetime.MainWindow <- MainWindow()
         | _ -> ()
 
-let showGui (problemPath: string) (problemNo: int) =
-        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
-        printfn "%A" problem
-
+let showGui (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
         problemGlobalVar := Some problem 
-        solutionPath := Some ($"{problemPath}/{problemNo}-solutions/")
+        writeSolutionGlobalVar := Some writeSolution
         AppBuilder
             .Configure<App>()
             .UsePlatformDetect()
