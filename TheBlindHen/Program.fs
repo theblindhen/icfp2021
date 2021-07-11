@@ -7,17 +7,19 @@ let problemPath = ref None
 let problemNo = ref None
 let gui = ref false
 let writeToFile = ref false
+let seed = ref (int DateTime.Now.Ticks)
 
 let argSpecs =
     [ "-pp", ArgType.String (fun p -> problemPath := Some p), "Path to problems"
     ; "-p", ArgType.Int (fun p -> problemNo := Some p), "Problem number"
     ; "-g", ArgType.Unit (fun () -> gui := true), "Show GUI"
     ; "-w", ArgType.Unit (fun () -> writeToFile := true), "Write solution to file"
+    ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
 let writeSolution solutionDir figure =
-    let postfix = FitInHole.rnd.Next(999999)
+    let postfix = Util.getRandom().Next(999999)
     let solutionFile = sprintf "%s%06d" solutionDir postfix
     IO.Directory.CreateDirectory solutionDir |> ignore
     printfn "Writing solution to %s" solutionFile
@@ -31,6 +33,8 @@ let printSolution figure =
 [<EntryPoint>]
 let main args =
     ArgParser.Parse(argSpecs, fun s -> failwith $"Unknown argument: {s}")
+    // Setup global random number generator as the first thing
+    Util._rnd := Some (Random(!seed))
     match !problemPath, !problemNo with
     | Some problemPath, Some problemNo ->
         let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"

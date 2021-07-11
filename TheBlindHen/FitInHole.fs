@@ -2,8 +2,6 @@ module FitInHole
 
 open System
 
-let rnd = Random(int(DateTime.Now.Ticks))
-
 let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Model.Figure) =
     let square x = x * x
     figure.Vertices
@@ -15,11 +13,10 @@ let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Mode
     |> float
 
 let stepSolver (problem: Model.Problem) =
-    let rnd = System.Random (int System.DateTime.Now.Ticks)
     let getNeighbor = Neighbors.balancedCollectionOfNeighbors
     let penalties = Penalty.figurePenalties problem
     let penaltySum fig = List.sum (penalties fig)
-    let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 rnd ()
+    let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 ()
     step
 
 let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
