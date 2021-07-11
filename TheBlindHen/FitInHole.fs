@@ -13,7 +13,7 @@ let holeBBPenalty (minCorner: Model.Coord, maxCorner: Model.Coord) (figure: Mode
     |> float
 
 let stepSolver (problem: Model.Problem) =
-    let getNeighbor = Neighbors.balancedCollectionOfNeighbors
+    let getNeighbor = Neighbors.balancedCollectionOfNeighbors problem
     let penalties = Penalty.figurePenalties problem
     let penaltySum fig = List.sum (penalties fig)
     let step = SimulatedAnnealing.simpleSimulatedAnnealing penaltySum getNeighbor 100_000 ()

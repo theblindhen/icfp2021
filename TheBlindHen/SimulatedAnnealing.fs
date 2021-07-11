@@ -9,7 +9,7 @@ let generalSimulatedAnnealing
     (acceptanceFunction: float -> float -> float -> float)
     (temperatureSchedule: float -> float)
     (energyFunction: 'state -> float)
-    (getRandomNeighbor: Random -> 'state -> 'state)
+    (getRandomNeighbor: 'state -> 'state)
     (iterations: int)
     () =
         let rnd = Util.getRandom ()
@@ -21,7 +21,7 @@ let generalSimulatedAnnealing
             if !i < iterations then
                 i := !i + 1
                 let temperature = temperatureSchedule (float !i / float iterations)
-                let state' = getRandomNeighbor rnd state
+                let state' = getRandomNeighbor state
                 let e' = energyFunction state'
                 if e' <= 0.0 then
                     printfn "Solution found after %d iterations" !i
@@ -50,7 +50,7 @@ let acceptanceFunctionStandard e e' temperature =
 
 let simpleSimulatedAnnealing
     (energyFunction: 'state -> float)
-    (getRandomNeighbor: Random -> 'state -> 'state)
+    (getRandomNeighbor: 'state -> 'state)
     (iterations: int) =
         generalSimulatedAnnealing acceptanceFunctionSimple temperatureScheduleSimple
             energyFunction getRandomNeighbor iterations
