@@ -226,8 +226,8 @@ let balancedCollectionOfNeighbors (problem: Problem) =
 
         // Total neighbor functions
         4.0, "single step", translateRandomBadVertex problem;
-        2.0, "10 steps", translateRandomVertexMultiple problem 10;
-        1.0, "25 steps", translateRandomVertexMultiple problem 25;
+        1.5, "10 steps", translateRandomVertexMultiple problem 10;
+        0.5, "25 steps", translateRandomVertexMultiple problem 25;
         0.2, "50 steps", translateRandomVertexMultiple problem 50;
         //1.0, "trans full fig"", translateFullFigureRandomly problem;
         //1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
