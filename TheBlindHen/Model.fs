@@ -16,12 +16,20 @@ module Raw =
         figure: Figure
         epsilon: int
     }
+    
+    type Solution = {
+        vertices: int array array
+    }
 
     let parseString (str: string): Problem =
         JsonSerializer.Deserialize str
 
     let parseFile (file: string): Problem =
         parseString (System.IO.File.ReadAllText file)
+
+    let parseSolutionFile (file: string): Solution =
+        System.IO.File.ReadAllText file
+        |> JsonSerializer.Deserialize
 
 // The following types are for general use in the program. They should be
 // general enough to support anything we might want to do with problems and
@@ -79,6 +87,11 @@ let copySolution (s: Solution): Solution =
         SolutionVertices = Array.copy s.SolutionVertices
     }
 
+let figureOfSolution (problem: Problem) (s: Solution): Figure =
+    let fig = copyFigureVerticies problem.Figure
+    { problem.Figure with Vertices = s.SolutionVertices }
+
+
 let private fromRawFigure (raw: Raw.Figure) : Figure =
     {
         Edges = raw.edges |> Array.map (fun xy -> (xy.[0], xy.[1]))
@@ -92,11 +105,19 @@ let private fromRawProblem (raw: Raw.Problem) : Problem =
         Epsilon = raw.epsilon
     }
 
+let private fromRawSolution (raw: Raw.Solution) : Solution =
+    {
+        SolutionVertices = raw.vertices |> Array.map (fun xy -> Coord(xy.[0], xy.[1]))
+    }
+
 let parseString (str: string) : Problem =
     fromRawProblem (Raw.parseString str)
 
 let parseFile (file: string) : Problem =
     fromRawProblem (Raw.parseFile file)
+
+let parseSolutionFile (file: string) : Solution =
+    fromRawSolution (Raw.parseSolutionFile file)
 
 let deparseSolution (sol: Solution) : string =
     """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""

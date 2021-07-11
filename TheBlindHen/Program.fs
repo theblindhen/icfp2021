@@ -8,6 +8,7 @@ let problemNo = ref None
 let gui = ref false
 let writeToFile = ref false
 let seed = ref (int DateTime.Now.Ticks)
+let solution = ref None
 
 let argSpecs =
     [ "-pp", ArgType.String (fun p -> problemPath := Some p), "Path to problems"
@@ -15,6 +16,7 @@ let argSpecs =
     ; "-g", ArgType.Unit (fun () -> gui := true), "Show GUI"
     ; "-w", ArgType.Unit (fun () -> writeToFile := true), "Write solution to file"
     ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
+    ; "-sol", ArgType.String (fun sol -> solution := Some sol), "Don't run, but score the input solution to the given problem"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
@@ -50,11 +52,20 @@ let main args =
     | Some problemPath, Some problemNo ->
         let file = $"{problemPath}/{problemNo}.problem"
         printfn "Reading problem file %s" file
-        let problem = Model.parseFile file
+        let problem = parseFile file
         let solutionDir = $"{problemPath}/{problemNo}-solutions/"
-        if !gui then
+        match !solution, !gui with
+        | Some solFile, _ ->
+            printfn $"Scoring solution {solFile}:"
+            let str = parseSolutionFile solFile
+                    |> figureOfSolution problem
+                    |> (Penalty.figurePenaltiesToString problem)
+            printfn $"\t{str}"
+            printfn $"\tTODO: Compute dislikes"
+            0
+        | _, true ->
             GUI.showGui problem (writeSolution solutionDir)
-        else
+        | _, false ->
             let writeIfTold =
                 if !writeToFile then
                     writeSolution solutionDir
