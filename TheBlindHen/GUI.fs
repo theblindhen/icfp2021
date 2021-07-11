@@ -183,6 +183,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
+        let _, _, _, _, _, articulationPoints = Geometry.getArticulationPoints shownFigure
         DockPanel.create [
             DockPanel.children [
                 UniformGrid.create [
@@ -299,6 +300,20 @@ module MVU =
                                     Line.stroke color
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
+                        ) @
+                        (
+                            figure.Vertices
+                            |> Array.mapi (fun i c -> (i, c))
+                            |> Array.filter (fun (i, _) -> articulationPoints.[i])
+                            |> Array.toList
+                            |> List.map (fun (_, c) ->
+                                Ellipse.create [
+                                    Ellipse.left (float(c.X) * scale - (0.75 * scale))
+                                    Ellipse.top (float(c.Y) * scale - (0.75 * scale))
+                                    Ellipse.width (1.5 * scale)
+                                    Ellipse.height (1.5 * scale)
+                                    Ellipse.fill "#ADD8E6"
+                                ] :> Avalonia.FuncUI.Types.IView)
                         ) @
                         (
                             state.Selection
