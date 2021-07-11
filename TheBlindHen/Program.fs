@@ -44,11 +44,13 @@ let printSolution figure =
 let main args =
     ArgParser.Parse(argSpecs, fun s -> failwith $"Unknown argument: {s}")
     // Setup global random number generator as the first thing
+    printfn "Random seed for this run: %d" !seed
     Util._rnd := Some (Random(!seed))
     match !problemPath, !problemNo with
     | Some problemPath, Some problemNo ->
-        let problem = Model.parseFile $"{problemPath}/{problemNo}.problem"
-        printfn "%A" problem
+        let file = $"{problemPath}/{problemNo}.problem"
+        printfn "Reading problem file %s" file
+        let problem = Model.parseFile file
         let solutionDir = $"{problemPath}/{problemNo}-solutions/"
         if !gui then
             GUI.showGui problem (writeSolution solutionDir)
