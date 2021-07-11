@@ -178,3 +178,13 @@ let figurePenalty (problem: Problem): Figure -> float =
             if p < -EPSILON then
                 printfn $"ERROR: The {i}'th penalty returned negative!!") pens
         List.sum pens
+
+let figurePenaltiesToString (problem: Problem): Figure -> string =
+    let penalties = figurePenalties problem
+    fun figure ->
+        let resPenalties = penalties figure
+        let spenalties =
+            resPenalties
+            |> List.map (fun p -> sprintf "%.1f" p) 
+            |> String.concat " + "
+        sprintf $"penalty = {spenalties} = %.1f{List.sum(resPenalties)}"

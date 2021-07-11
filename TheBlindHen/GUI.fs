@@ -25,7 +25,7 @@ let findNearbyCoord (c: Model.Coord) (figure: Model.Figure) =
 
 let stepSolverWithStopAndDebug problem =
     let stepSolver = FitInHole.stepSolver problem
-    let penalties = Penalty.figurePenalties problem
+    let figurePenaltiesToString = Penalty.figurePenaltiesToString problem
     fun (figure, figurePenalty) ->
         if figurePenalty = 0.0 then
             printfn "Reached score 0 and will not advance"
@@ -33,12 +33,7 @@ let stepSolverWithStopAndDebug problem =
         else
             let resultOpt, penalty = stepSolver figure
             let result = Option.defaultValue figure resultOpt
-            let resPenalties = penalties result
-            let spenalties =
-                resPenalties
-                |> List.map (fun p -> sprintf "%.1f" p) 
-                |> String.concat " + "
-            printfn $"penalty = {spenalties} = %.1f{List.sum(resPenalties)}"
+            printfn $"{figurePenaltiesToString result}"
             (result, penalty)
 
 module MVU =

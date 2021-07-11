@@ -8,6 +8,7 @@ let problemNo = ref None
 let gui = ref false
 let writeToFile = ref false
 let seed = ref (int DateTime.Now.Ticks)
+let solution = ref None
 
 let argSpecs =
     [ "-pp", ArgType.String (fun p -> problemPath := Some p), "Path to problems"
@@ -15,6 +16,7 @@ let argSpecs =
     ; "-g", ArgType.Unit (fun () -> gui := true), "Show GUI"
     ; "-w", ArgType.Unit (fun () -> writeToFile := true), "Write solution to file"
     ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
+    ; "-sol", ArgType.String (fun sol -> solution := Some sol), "Don't run, but score the input solution to the given problem"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
@@ -54,17 +56,25 @@ let printSolution figure =
 let main args =
     ArgParser.Parse(argSpecs, fun s -> failwith $"Unknown argument: {s}")
     // Setup global random number generator as the first thing
-    printfn "Random seed for this run: %d" !seed
+    //printfn "Random seed for this run: %d" !seed
     Util._rnd := Some (Random(!seed))
     match !problemPath, !problemNo with
     | Some problemPath, Some problemNo ->
         let file = $"{problemPath}/{problemNo}.problem"
         printfn "Reading problem file %s" file
-        let problem = Model.parseFile file
+        let problem = parseFile file
         let solutionDir = $"{problemPath}/{problemNo}-solutions/"
-        if !gui then
+        match !solution, !gui with
+        | Some solFile, _ ->
+            printfn $"Scoring solution {solFile}:"
+            let figure = parseSolutionFile solFile
+                        |> figureOfSolution problem
+            printfn $"\t{Penalty.figurePenaltiesToString problem figure}"
+            printfn $"Dislikes: {Penalty.dislikesPenalty problem figure}"
+            0
+        | _, true ->
             GUI.showGui problem (writeSolution solutionDir problem)
-        else
+        | _, false ->
             let writeIfTold =
                 if !writeToFile then
                     writeSolution solutionDir problem

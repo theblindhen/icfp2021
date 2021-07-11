@@ -3,46 +3,51 @@
   Figure #vertices:  20
   Figure #edges:  30
   Epsilon:  150000
+2.problem
+  Hole #vertices:  20
+  Figure #vertices:  39
+  Figure #edges:  48
+  Epsilon:  250000
+3.problem
+  Hole #vertices:  26
+  Figure #vertices:  36
+  Figure #edges:  38
+  Epsilon:  180000
+4.problem
+  Hole #vertices:  11
+  Figure #vertices:  43
+  Figure #edges:  50
+  Epsilon:  200000
+5.problem
+  Hole #vertices:  14
+  Figure #vertices:  45
+  Figure #edges:  60
+  Epsilon:  200000
+6.problem
+  Hole #vertices:  13
+  Figure #vertices:  39
+  Figure #edges:  48
+  Epsilon:  150000
+7.problem
+  Hole #vertices:  8
+  Figure #vertices:  58
+  Figure #edges:  114
+  Epsilon:  200000
+8.problem
+  Hole #vertices:  10
+  Figure #vertices:  13
+  Figure #edges:  21
+  Epsilon:  200000
+9.problem
+  Hole #vertices:  16
+  Figure #vertices:  96
+  Figure #edges:  128
+  Epsilon:  375000
 10.problem
   Hole #vertices:  9
   Figure #vertices:  58
   Figure #edges:  82
   Epsilon:  200000
-100.problem
-  Hole #vertices:  29
-  Figure #vertices:  92
-  Figure #edges:  126
-  Epsilon:  250000
-101.problem
-  Hole #vertices:  34
-  Figure #vertices:  65
-  Figure #edges:  91
-  Epsilon:  247059
-102.problem
-  Hole #vertices:  44
-  Figure #vertices:  63
-  Figure #edges:  93
-  Epsilon:  97800
-103.problem
-  Hole #vertices:  77
-  Figure #vertices:  39
-  Figure #edges:  48
-  Epsilon:  180000
-104.problem
-  Hole #vertices:  62
-  Figure #vertices:  36
-  Figure #edges:  38
-  Epsilon:  200000
-105.problem
-  Hole #vertices:  98
-  Figure #vertices:  201
-  Figure #edges:  311
-  Epsilon:  34063
-106.problem
-  Hole #vertices:  73
-  Figure #vertices:  132
-  Figure #edges:  203
-  Epsilon:  22722
 11.problem
   Hole #vertices:  3
   Figure #vertices:  3
@@ -88,11 +93,6 @@
   Figure #vertices:  3
   Figure #edges:  3
   Epsilon:  0
-2.problem
-  Hole #vertices:  20
-  Figure #vertices:  39
-  Figure #edges:  48
-  Epsilon:  250000
 20.problem
   Hole #vertices:  5
   Figure #vertices:  6
@@ -143,11 +143,6 @@
   Figure #vertices:  4
   Figure #edges:  4
   Epsilon:  2500
-3.problem
-  Hole #vertices:  26
-  Figure #vertices:  36
-  Figure #edges:  38
-  Epsilon:  180000
 30.problem
   Hole #vertices:  18
   Figure #vertices:  5
@@ -198,11 +193,6 @@
   Figure #vertices:  9
   Figure #edges:  12
   Epsilon:  20037
-4.problem
-  Hole #vertices:  11
-  Figure #vertices:  43
-  Figure #edges:  50
-  Epsilon:  200000
 40.problem
   Hole #vertices:  19
   Figure #vertices:  6
@@ -253,11 +243,6 @@
   Figure #vertices:  13
   Figure #edges:  21
   Epsilon:  164384
-5.problem
-  Hole #vertices:  14
-  Figure #vertices:  45
-  Figure #edges:  60
-  Epsilon:  200000
 50.problem
   Hole #vertices:  18
   Figure #vertices:  9
@@ -308,11 +293,6 @@
   Figure #vertices:  18
   Figure #edges:  25
   Epsilon:  39400
-6.problem
-  Hole #vertices:  13
-  Figure #vertices:  39
-  Figure #edges:  48
-  Epsilon:  150000
 60.problem
   Hole #vertices:  19
   Figure #vertices:  36
@@ -363,11 +343,6 @@
   Figure #vertices:  34
   Figure #edges:  41
   Epsilon:  187500
-7.problem
-  Hole #vertices:  8
-  Figure #vertices:  58
-  Figure #edges:  114
-  Epsilon:  200000
 70.problem
   Hole #vertices:  36
   Figure #vertices:  58
@@ -418,11 +393,6 @@
   Figure #vertices:  39
   Figure #edges:  48
   Epsilon:  180000
-8.problem
-  Hole #vertices:  10
-  Figure #vertices:  13
-  Figure #edges:  21
-  Epsilon:  200000
 80.problem
   Hole #vertices:  57
   Figure #vertices:  65
@@ -473,11 +443,6 @@
   Figure #vertices:  39
   Figure #edges:  48
   Epsilon:  250000
-9.problem
-  Hole #vertices:  16
-  Figure #vertices:  96
-  Figure #edges:  128
-  Epsilon:  375000
 90.problem
   Hole #vertices:  76
   Figure #vertices:  150
@@ -528,3 +493,168 @@
   Figure #vertices:  55
   Figure #edges:  79
   Epsilon:  250000
+100.problem
+  Hole #vertices:  29
+  Figure #vertices:  92
+  Figure #edges:  126
+  Epsilon:  250000
+101.problem
+  Hole #vertices:  34
+  Figure #vertices:  65
+  Figure #edges:  91
+  Epsilon:  247059
+102.problem
+  Hole #vertices:  44
+  Figure #vertices:  63
+  Figure #edges:  93
+  Epsilon:  97800
+103.problem
+  Hole #vertices:  77
+  Figure #vertices:  39
+  Figure #edges:  48
+  Epsilon:  180000
+104.problem
+  Hole #vertices:  62
+  Figure #vertices:  36
+  Figure #edges:  38
+  Epsilon:  200000
+105.problem
+  Hole #vertices:  98
+  Figure #vertices:  201
+  Figure #edges:  311
+  Epsilon:  34063
+106.problem
+  Hole #vertices:  73
+  Figure #vertices:  132
+  Figure #edges:  203
+  Epsilon:  22722
+107.problem
+  Hole #vertices:  29
+  Figure #vertices:  113
+  Figure #edges:  167
+  Epsilon:  150000
+108.problem
+  Hole #vertices:  46
+  Figure #vertices:  20
+  Figure #edges:  30
+  Epsilon:  160000
+109.problem
+  Hole #vertices:  20
+  Figure #vertices:  43
+  Figure #edges:  73
+  Epsilon:  146789
+110.problem
+  Hole #vertices:  41
+  Figure #vertices:  45
+  Figure #edges:  60
+  Epsilon:  150000
+111.problem
+  Hole #vertices:  43
+  Figure #vertices:  48
+  Figure #edges:  70
+  Epsilon:  78067
+112.problem
+  Hole #vertices:  38
+  Figure #vertices:  43
+  Figure #edges:  68
+  Epsilon:  70022
+113.problem
+  Hole #vertices:  56
+  Figure #vertices:  43
+  Figure #edges:  50
+  Epsilon:  110000
+114.problem
+  Hole #vertices:  108
+  Figure #vertices:  224
+  Figure #edges:  350
+  Epsilon:  72399
+115.problem
+  Hole #vertices:  48
+  Figure #vertices:  65
+  Figure #edges:  91
+  Epsilon:  110000
+116.problem
+  Hole #vertices:  22
+  Figure #vertices:  62
+  Figure #edges:  94
+  Epsilon:  57318
+117.problem
+  Hole #vertices:  41
+  Figure #vertices:  55
+  Figure #edges:  79
+  Epsilon:  234568
+118.problem
+  Hole #vertices:  18
+  Figure #vertices:  108
+  Figure #edges:  161
+  Epsilon:  60061
+119.problem
+  Hole #vertices:  44
+  Figure #vertices:  48
+  Figure #edges:  72
+  Epsilon:  90000
+120.problem
+  Hole #vertices:  46
+  Figure #vertices:  58
+  Figure #edges:  82
+  Epsilon:  100000
+121.problem
+  Hole #vertices:  26
+  Figure #vertices:  71
+  Figure #edges:  105
+  Epsilon:  121828
+122.problem
+  Hole #vertices:  66
+  Figure #vertices:  215
+  Figure #edges:  320
+  Epsilon:  69098
+123.problem
+  Hole #vertices:  56
+  Figure #vertices:  36
+  Figure #edges:  38
+  Epsilon:  150000
+124.problem
+  Hole #vertices:  30
+  Figure #vertices:  47
+  Figure #edges:  69
+  Epsilon:  74271
+125.problem
+  Hole #vertices:  98
+  Figure #vertices:  202
+  Figure #edges:  304
+  Epsilon:  70632
+126.problem
+  Hole #vertices:  74
+  Figure #vertices:  138
+  Figure #edges:  206
+  Epsilon:  59851
+127.problem
+  Hole #vertices:  35
+  Figure #vertices:  13
+  Figure #edges:  21
+  Epsilon:  164384
+128.problem
+  Hole #vertices:  26
+  Figure #vertices:  62
+  Figure #edges:  91
+  Epsilon:  67217
+129.problem
+  Hole #vertices:  37
+  Figure #vertices:  92
+  Figure #edges:  126
+  Epsilon:  140000
+130.problem
+  Hole #vertices:  30
+  Figure #vertices:  58
+  Figure #edges:  114
+  Epsilon:  130000
+131.problem
+  Hole #vertices:  57
+  Figure #vertices:  49
+  Figure #edges:  59
+  Epsilon:  219513
+132.problem
+  Hole #vertices:  22
+  Figure #vertices:  84
+  Figure #edges:  152
+  Epsilon:  120000
