@@ -3,6 +3,8 @@ module Geometry
 open Model
 
 exception Exception of string
+        
+type Direction = CW | CCW
 
 /// Line segment
 type Segment = Coord * Coord
@@ -10,7 +12,7 @@ type Segment = Coord * Coord
 let stringOfSegment (c1: Coord, c2: Coord) =
     $"({c1})--({c2})"
 
-type Vector = 
+type FloatVector = 
     struct 
         val X: float
         val Y: float
@@ -18,11 +20,88 @@ type Vector =
 
         member this.Length = 
             sqrt(this.X*this.X + this.Y*this.Y)
+
+        member this.LengthSq = 
+            this.X*this.X + this.Y*this.Y
+
+        member this.Hat =
+            FloatVector(-this.Y, this.X)
+    end
+
+type IntVector = 
+    struct 
+        val X: int
+        val Y: int
+        new(x: int, y: int) = { X = x; Y = y }
+
+        member this.LengthSq =
+            this.X*this.X + this.Y*this.Y
+
+        member this.Hat =
+            IntVector(-this.Y, this.X)
+
+        member this.ToFloat =
+            FloatVector(float this.X, float this.Y)
     end
 
 let EPSILON = 0.00001
 let isZero (x: float) = abs (x) < EPSILON
 let isOne (x: float) = isZero (x - 1.0)
+
+let intVectorOfSegment ((s1, s2): Segment) =
+    IntVector (s2.X - s1.X, s2.Y - s1.Y) 
+
+let floatVectorOfSegment ((s1, s2): Segment) =
+    FloatVector (float (s2.X - s1.X), float (s2.Y - s1.Y)) 
+
+let intVectorDotProduct (v1: IntVector) (v2: IntVector) =
+    v1.X * v2.X + v1.Y * v2.Y
+
+let floatVectorDotProduct (v1: FloatVector) (v2: FloatVector) =
+    v1.X * v2.X + v1.Y * v2.Y
+
+// TODO: These should all operate on Segments to be ints
+
+let intVectorsParallel (v1: IntVector) (v2: IntVector) =
+    // Morally intDotProduct v1 v2.Hat
+    -v1.X * v2.Y + v1.Y * v2.X = 0
+
+let floatVectorsParallel (v1: FloatVector) (v2: FloatVector) =
+    isZero (-v1.X * v2.Y + v1.Y * v2.X )
+
+let intVectorDeterminant (v1: IntVector) (v2: IntVector) =
+    v1.X * v2.Y - v1.Y * v2.X
+
+let floatVectorDeterminant (v1: FloatVector) (v2: FloatVector) =
+    v1.X * v2.Y - v1.Y * v2.X
+
+let _intDeterminantToDirection (d: int) : Direction =
+    if d > 0 then CCW else CW
+
+let _floatDeterminantToDirection (d: float) : Direction =
+    if d > 0.0 then CCW else CW
+
+let intVectorsDirection (v1: IntVector) (v2: IntVector) : Direction =
+    _intDeterminantToDirection (intVectorDeterminant v1 v2)
+
+let floatVectorsDirection (v1: FloatVector) (v2: FloatVector) : Direction =
+    _floatDeterminantToDirection (floatVectorDeterminant v1 v2)
+
+let intAddVectors (v1: IntVector) (v2: IntVector): IntVector =
+    IntVector (v1.X + v2.X, v1.Y + v2.Y)
+
+let floatAddVectors (v1: FloatVector) (v2: FloatVector): FloatVector =
+    FloatVector (v1.X + v2.X, v1.Y + v2.Y)
+
+let intScaleVector (v: IntVector) (s: int) =
+    IntVector (v.X * s, v.Y * s)
+
+let floatScaleVector (v: FloatVector) (s: float) =
+    FloatVector (v.X * s, v.Y * s)
+
+let floatReflectVector (v: FloatVector) (l: FloatVector): FloatVector =
+    floatAddVectors (floatScaleVector l (2.0 * (floatVectorDotProduct v l) / (floatVectorDotProduct l l)))
+                    (floatScaleVector v (-1.0))
 
 /// Invariant that vertices V1-3 are sorted in increasing order of their Y-coordinate
 /// constructor will sort input
@@ -64,55 +143,20 @@ let sortSegments (segments : Segment list) =
     |> List.sortBy (fun (c1, c2) -> min c1.X c2.X)
     |> List.sortBy (fun (c1, c2) -> min c1.Y c2.Y)
 
-/// assumes segments are sorted
-// let innerCoordsOfSimplePolygon  segments =
-//     let edges
-
-let vectorOfSegment ((s1, s2): Segment) =
-    Vector (float (s2.X - s1.X), float (s2.Y - s1.Y)) 
-
-let vectorDotProduct (v1: Vector) (v2: Vector) =
-    v1.X * v2.X + v1.Y * v2.Y
-        
-type Direction = CW | CCW
-
-// TODO: These should all operate on Segments to be ints
-
-let vectorsAreParallel (v1: Vector) (v2: Vector) =
-    let v2hat = Vector(-v2.Y, v2.X)
-    abs (vectorDotProduct v1 v2hat) < EPSILON
-
-let vectorDeterminant (v1: Vector) (v2: Vector) : float =
-    v1.X * v2.Y - v1.Y * v2.X
-
-let _determinantToDirection (d: float) : Direction =
-    if d > 0.0 then CCW else CW
-
-let vectorsDirection (v1: Vector) (v2: Vector) : Direction =
-    _determinantToDirection (vectorDeterminant v1 v2)
-
-let addVectors (v1: Vector) (v2: Vector): Vector =
-    Vector (v1.X + v2.X, v1.Y + v2.Y)
-
-let scaleVector (v: Vector) (s: float) =
-    Vector (v.X * s, v.Y * s)
-
-/// Reflect vector v through l, where l describes a line through the origin
-let reflectVector (v: Vector) (l: Vector): Vector =
-    addVectors (scaleVector l (2.0 * (vectorDotProduct v l) / (vectorDotProduct l l))) (scaleVector v (-1.0))
-
 /// Solve a 2x2 matrix problem by inversion.
+/// Returns Some (intSol, d) if the matrix is regular, where intSol/d is the
+/// solution, and d is the (non-zero) determinant of the matrix.
 /// Returns None if the matrix is singular.
 /// Note that there may still be a solution, if the column space is
 /// 1-dimensional and the target vector happens to fall within that.
-let solveByInversion(row1: Vector, row2: Vector) (target: Vector) =
-    let d = vectorDeterminant row1 row2
-    if isZero d then
+let solveByInversion(row1: IntVector, row2: IntVector) (target: IntVector) =
+    let d = intVectorDeterminant row1 row2
+    if d = 0 then
         None
     else
         let sX = target.X * row2.Y - target.Y * row2.X
         let sY = target.X * row1.Y - target.Y * row1.X
-        Some (Vector (sX/d, sY/d), d)
+        Some (IntVector (sX, sY), d)
 
 type SegmentIntersect = 
       /// Multiplier on seg1 to get the intersection point,
@@ -123,21 +167,23 @@ type SegmentIntersect =
     | Overlap of float * float
 
 let segmentsIntersect (seg1 : Segment) (seg2: Segment) : SegmentIntersect option =
-    let v1 = vectorOfSegment seg1
-    let v2 = vectorOfSegment seg2
+    let v1 = intVectorOfSegment seg1
+    let v2 = intVectorOfSegment seg2
     let p1,_ = seg1
     let p2,q2 = seg2
-    let startDiff = Vector(float (p2.X - p1.X), float (p2.Y - p1.Y))
+    let startDiff = IntVector(p2.X - p1.X, p2.Y - p1.Y)
     match solveByInversion (v1, v2) startDiff with
-    | Some (sol, det) -> Some (Point (sol.X, _determinantToDirection det,  sol.Y))
+    | Some (sol, det) -> Some (Point ((float sol.X)/(float det),
+                                      _intDeterminantToDirection det, 
+                                      (float sol.Y)/(float det)))
     | None ->
         // The segments are parallel.
         // They are then on the same line exactly when startDiff is parallel to v1
-        if vectorsAreParallel startDiff v1 then
-            if not (isZero v1.X) then
-                Some (Overlap (-float(p1.X - p2.X)/v1.X, -float(p1.X - q2.X)/v1.X))
+        if intVectorsParallel startDiff v1 then
+            if v1.X <> 0 then
+                Some (Overlap (-float(p1.X - p2.X)/(float v1.X), -float(p1.X - q2.X)/(float v1.X)))
             else
-                Some (Overlap (-float(p1.Y - p2.Y)/v1.Y, -float(p1.Y - q2.Y)/v1.Y))
+                Some (Overlap (-float(p1.Y - p2.Y)/(float v1.Y), -float(p1.Y - q2.Y)/(float v1.Y)))
         else
             None
 
@@ -196,17 +242,17 @@ let segmentDecomposition (seg: Segment) (simplePolygon: Segment list) : Decompos
         | Some (firstIdx, Point (_, _, b)) ->
         if not (isZero b) then CW // first Point is not an exit, doesn't matter
         else
-        let segv = vectorOfSegment seg
+        let segv = intVectorOfSegment seg
         let rec getLastDir i =
             let i = if i = 0 then segArr.Length-1 else i - 1
             if i = firstIdx then CW // Failsafe
             else
-            let holeSegv = vectorOfSegment segArr.[i]
-            let d = vectorDeterminant segv holeSegv
-            if abs(d) < EPSILON then
+            let holeSegv = intVectorOfSegment segArr.[i]
+            let d = intVectorDeterminant segv holeSegv
+            if d = 0 then
                 getLastDir i
             else
-                _determinantToDirection d
+                _intDeterminantToDirection d
         getLastDir firstIdx
     let (decompositionsRev, _) = 
         List.fold (fun (acc, lastDir) cur ->

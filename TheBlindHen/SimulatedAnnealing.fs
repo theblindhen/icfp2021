@@ -52,7 +52,7 @@ let acceptanceFunctionStandard e e' temperature =
 
 let simpleSimulatedAnnealing
     (energyFunction: 'state -> float)
-    (getRandomNeighbor: 'state -> 'state)
+    (getRandomNeighbor: 'state -> 'state option)
     (iterations: int) =
         generalSimulatedAnnealing acceptanceFunctionSimple temperatureScheduleSimple
             energyFunction getRandomNeighbor iterations
