@@ -167,10 +167,10 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        //0.01, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
-        //0.01, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
-        //0.01, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
-        //0.01, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
+        0.01, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
+        0.01, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
+        0.01, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
+        0.01, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
