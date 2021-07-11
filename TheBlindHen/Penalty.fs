@@ -18,7 +18,7 @@ let problemEdgeLengthSqRanges (problem: Problem) =
 /// Returns the diff btw an edgeLenSq and the allowed lenSq range for the problem.
 /// If it is too short, the number is negative, if too long, positive.
 /// WARNING: Remember to call abs on the result for use in a penalty!
-let edgeLengthExcessSq (problem: Problem) =
+let edgeLengthExcessSqSigned (problem: Problem) =
     let edgeSqRanges = problemEdgeLengthSqRanges problem
     fun (edgeIdx: int) (edge: Segment) ->
         let (min, max) = edgeSqRanges.[edgeIdx]
@@ -33,10 +33,10 @@ let edgeLengthExcessSq (problem: Problem) =
 
 /// Return the sum of how much each edge's sq-length is outside the allowed range
 let penaltyEdgeLengthSqSum (problem: Problem) =
-    let edgeLengthExcessSq = edgeLengthExcessSq problem
+    let edgeLengthExcessSqSigned = edgeLengthExcessSqSigned problem
     fun (fig: Figure) ->
         figureSegments fig
-        |> List.mapi edgeLengthExcessSq
+        |> List.mapi edgeLengthExcessSqSigned
         |> List.sumBy abs
 
 /// Return the sum of each edge's ratio to the allowed range
@@ -124,12 +124,16 @@ let segmentOutsideHole holeSegments =
         iter (isInside seg, 0.0, 0.0) decoms
         )
 
+let edgeOutsideHolePenalty holeSegments =
+    let segmentOutsideHole = segmentOutsideHole holeSegments
+    fun seg ->
+        (segmentOutsideHole seg) * float (segmentLengthSq seg)
+
 let penaltyEdgeRatioOutside (problem: Problem) =
-    let segmentOutsideHole = segmentOutsideHole (holeSegments problem)
+    let edgeOutsideHolePenalty = edgeOutsideHolePenalty (holeSegments problem)
     fun fig ->
         figureSegments fig
-        |> List.map (fun seg -> (seg, segmentOutsideHole seg))
-        |> List.sumBy (fun (seg, ratio) -> ratio * float (segmentLengthSq seg))
+        |> List.sumBy edgeOutsideHolePenalty
 
 let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
     let isNotInHole = memoize(SkiaUtil.isInHole problem.Hole >> not)
@@ -205,9 +209,18 @@ let figurePenaltiesToString (problem: Problem): Figure -> string =
 let vertexBadness (problem: Problem) =
     let OUTSIDE_BADNESS = 1000.
     let isInHole = memoize (SkiaUtil.isInHole problem.Hole)
-    let edgeLengthExcessSq = edgeLengthExcessSq problem
+    let edgeOutsideHolePenalty = edgeOutsideHolePenalty (holeSegments problem)
+    let edgeLengthExcessSq =
+        let inner = edgeLengthExcessSqSigned problem
+        fun i seg -> abs (inner i seg)
     let edgeMap = incidentEdgeMap problem.Figure
     fun (fig: Figure) ->
+        let edgeOutsidePens =
+            { 0..Array.length fig.Edges-1 }
+            |> Seq.map (fun edgeIdx ->
+                segmentOfVertexIdxPair fig fig.Edges.[edgeIdx]
+                |> edgeOutsideHolePenalty)
+            |> Array.ofSeq
         let edgeLenPens =
             { 0..Array.length fig.Edges-1 }
             |> Seq.map (fun edgeIdx ->
@@ -216,9 +229,12 @@ let vertexBadness (problem: Problem) =
             |> Array.ofSeq
         fig.Vertices
         |> Array.mapi (fun vertexIdx vertex ->
-            let edgeContribution =
+            let edgeOutsideContribution =
+                Map.find vertexIdx edgeMap
+                |> List.sumBy (fun i -> edgeOutsidePens.[i])
+            let edgeLenContribution =
                 Map.find vertexIdx edgeMap
                 |> List.sumBy (fun i -> edgeLenPens.[i])
             let isOutsideContribution =
                 if isInHole vertex then 0.0 else OUTSIDE_BADNESS
-            edgeContribution + isOutsideContribution)
+            edgeOutsideContribution + edgeLenContribution + isOutsideContribution)

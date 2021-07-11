@@ -186,7 +186,7 @@ module MVU =
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
         let segmentOutsideHole = Penalty.segmentOutsideHole holeSegments
-        let edgeLengthExcessSq = Penalty.edgeLengthExcessSq state.Problem
+        let edgeLengthExcessSqSigned = Penalty.edgeLengthExcessSqSigned state.Problem
         let adj, isArticulationPoint = Graph.getArticulationPoints shownFigure
         let verticalCutLines = Graph.findVerticalCutComponents adj shownFigure
         let horizontalCutLines = Graph.findHorizontalCutComponents adj shownFigure
@@ -313,7 +313,7 @@ module MVU =
                             |> List.mapi (fun edgeIdx (s,t) ->
                                 let sc, tc = vs.[s], vs.[t]
                                 let outsideHolePenalty = segmentOutsideHole (sc, tc)
-                                let edgeLengthPenalty = edgeLengthExcessSq edgeIdx (sc, tc) 
+                                let edgeLengthPenalty = edgeLengthExcessSqSigned edgeIdx (sc, tc) 
                                 let color =
                                     if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
                                     else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
