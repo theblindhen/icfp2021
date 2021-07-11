@@ -28,6 +28,6 @@ let solve (problem: Model.Problem) (writeSolution: Model.Figure -> unit) =
             printfn "Problem solved! OMG!"
             writeSolution figure
         | Some (desc, figure) ->
-            // printfn $"Iteration %d{i}: {desc}"
+            printfn $"Iteration %d{i}: {desc}"
             run (i + 1) figure
     run 0 problem.Figure

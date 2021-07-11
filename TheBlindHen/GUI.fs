@@ -35,10 +35,10 @@ let stepSolverWithStopAndDebug problem =
             let resultOpt, penalty = stepSolver figure
             let desc, result =
                 match resultOpt with
-                | None -> NowhereToGo, figure
+                | None -> NowhereToGo "blah", figure
                 | Some (desc, fig) -> desc, fig
             match desc with
-            | NowhereToGo -> printfn "Nowhere to go?!"
+            | NowhereToGo desc -> printfn $"Nowhere to go?! by {desc}"
             | RejectedNeighbor desc -> () // printfn $"Rejected move by {desc}"
             | ChoseNeighbor desc -> printfn $"Chose move by {desc}\n\t{figurePenaltiesToString result}"
             (result, penalty)
