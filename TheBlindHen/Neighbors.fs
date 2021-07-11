@@ -12,38 +12,38 @@ let translateRandomCoord (problem: Problem) (figure: Figure) =
     let newCord = Coord(rndCord.X + dx, rndCord.Y + dy)
     let newFigure = copyFigureVerticies figure
     Array.set newFigure.Vertices rndIndex newCord
-    newFigure
+    Some (newFigure)
 
 let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let delta = directions.[rnd.Next(directions.Length)]
-    Transformations.translateVerticies delta figure
+    Some (Transformations.translateVerticies delta figure)
 
 let rotateFullFigureAroundRandomPoint (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let rndIndex = rnd.Next(figure.Vertices.Length)
     let rndCord = Array.item rndIndex figure.Vertices
-    Transformations.rotateVerticiesAround rndCord figure
+    Some (Transformations.rotateVerticiesAround rndCord figure)
 
 let rotateRandomArticulationPoint (problem: Problem) =
     let rnd = Util.getRandom ()
     let adj, isArticulationPoint = Graph.getArticulationPoints problem.Figure
-    let articulationPoints =
+    let articulationPointsAndComponents =
         isArticulationPoint
         |> Array.mapi (fun i v -> (i, v))
         |> Array.filter snd
-        |> Array.map fst
+        |> Array.map (fun (i, _) -> (i, Graph.connectedComponentsWithoutVertex i adj))
     fun figure ->
-        if not (Array.isEmpty articulationPoints) then
-            let rndArticulationPoint = articulationPoints.[rnd.Next(articulationPoints.Length)]
+        let noArticulationPoints = articulationPointsAndComponents.Length
+        if noArticulationPoints > 0 then
+            let rndArticulationPoint, components = articulationPointsAndComponents.[noArticulationPoints]
             let rndArticulationPointCoord = figure.Vertices.[rndArticulationPoint]
-            let components = Graph.connectedComponentsWithoutVertex rndArticulationPoint adj
-            printfn $"{components}"
+            // TODO: consider if it makes sense to pick the larger component in some cases
             let selection = List.minBy List.length components
-            Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure
-        else figure
+            Some (Transformations.rotateSelectedVerticiesAround selection rndArticulationPointCoord figure)
+        else None
  
-let weightedChoice (choices: (float * (Problem -> 'a -> 'b)) list) (problem: Problem) (param: 'a) : 'b =
+let weightedChoice (choices: (float * (Problem -> 'a -> 'b option)) list) (problem: Problem) (param: 'a) : 'b option =
     let choices = List.map (fun (w, f) -> (w, f problem)) choices
     let totalWeight = List.sumBy fst choices
     let rnd = Util.getRandom ()
