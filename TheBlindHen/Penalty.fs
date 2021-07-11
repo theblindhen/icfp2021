@@ -125,14 +125,14 @@ let penaltyEdgeRatioOutside (problem: Problem) =
         |> List.sumBy (fun (seg, ratio) -> ratio * float (segmentLengthSq seg))
 
 let outsideHoleEndpointPenalty (problem: Problem): Figure -> float =
-    let isInHole = SkiaUtil.isInHole problem.Hole
-    let vertexPenalty = memoize(fun (c: Coord) ->
+    let isNotInHole = memoize(SkiaUtil.isInHole problem.Hole >> not)
+    let vertexPenalty = (fun (c: Coord) ->
         let minDist = Array.minBy (fun (hc: Coord) -> segmentLengthSq (c, hc))
                                   problem.Hole
         segmentLengthSq (c, minDist))
     fun figure ->
         figure.Vertices
-        |> Array.filter (isInHole >> not)
+        |> Array.filter isNotInHole
         |> Array.sumBy vertexPenalty
         |> float
 
