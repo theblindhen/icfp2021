@@ -53,12 +53,13 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
             match path with
             | [] -> failwith "err 1.5"
             | last::_ ->
+            // DANGER, Will Robinson!
             usefulEndpoint.[last] <- false
             path)
         |> Seq.map List.rev
 
     let nextCandidates (partialMatch: int option array) (prevFigId: VertexId) (holeSegLen: float) =
-        freeIncident partialMatch prevFigId 3 // TODO: maxDepth
+        freeIncident partialMatch prevFigId 4 // TODO: maxDepth
         |> Seq.filter (fun path ->
             match path with
             | [] -> failwith "err2"
@@ -96,7 +97,7 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         |> Seq.collect (fun figId ->
             let adj = Map.find figId figAdjMap
             // For each adj, if it's already matched, the edge needs to conform
-            let conforms =
+            let conformsDirect =
                 adj
                 |> List.filter (fun adjId -> Option.isSome partialMatch.[adjId])
                 |> List.forall (fun adjId ->
@@ -106,10 +107,33 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
                                      problem.Hole.[Option.get partialMatch.[adjId]])
                     let forcedLen = Geometry.segmentLength forcedSeg
                     min <= forcedLen && forcedLen <= max)
-            if conforms then
-                let partialMatch = Array.copy partialMatch
-                partialMatch.[figId] <- Some holeId
-                placeFigVertex partialMatch firstFigId figId (holeId + 1)
+            
+            if conformsDirect then
+                let conformsIndirect =
+                    adj
+                    |> List.filter (fun adjId -> Option.isNone partialMatch.[adjId])
+                    |> List.collect (fun adjId ->
+                        Map.find adjId figAdjMap
+                        |> List.filter (fun adjAdj ->
+                            adjAdj <> figId && Option.isSome partialMatch.[adjAdj])
+                        |> List.map (fun adjAdj -> (adjId, adjAdj)))
+                    |> List.forall (fun (adjId, adjAdj) ->
+                        let max1 =
+                            let edgeId = Map.find (figId, adjId) edgeFromVertexMap
+                            snd (edgeLengthRanges.[edgeId])
+                        let max2 =
+                            let edgeId = Map.find (adjId, adjAdj) edgeFromVertexMap
+                            snd (edgeLengthRanges.[edgeId])
+                        let forcedSeg = (problem.Hole.[holeId],
+                                         problem.Hole.[Option.get partialMatch.[adjAdj]])
+                        let forcedLen = Geometry.segmentLength forcedSeg
+                        forcedLen <= max1 + max2)
+                if conformsIndirect then
+                    let partialMatch = Array.copy partialMatch
+                    partialMatch.[figId] <- Some holeId
+                    placeFigVertex partialMatch firstFigId figId (holeId + 1)
+                else
+                    Seq.empty
             else
                 Seq.empty)
     // Place the first
