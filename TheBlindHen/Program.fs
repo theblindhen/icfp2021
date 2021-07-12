@@ -2,6 +2,97 @@ open System
 open Model
 open ExtCore.Args
 
+let vertexMatchSequence (problem: Problem) : (int option array) seq =
+    let figAdjMap = Graph.adjacentVertices (problem.Figure)
+    let edgeFromVertexMap =
+        problem.Figure.Edges
+        |> Array.indexed
+        |> Array.collect (fun (edgeId, (fromId, toId)) ->
+            [| ((fromId, toId), edgeId); ((toId, fromId), edgeId) |])
+        |> Map.ofArray
+    let holeSegments = holeSegments problem |> Array.ofList
+    printfn "Holes = %A" holeSegments
+    let edgeLengthBad =
+        let excess = Penalty.edgeLengthExcessSqSigned problem
+        fun (figEdgeId: int) (edge: Geometry.Segment) ->
+            let pen = excess figEdgeId edge
+            pen <> 0.0
+    let rec placeFigVertex (partialMatch: int option array) (firstFigId: VertexId) (prevFigId: VertexId) (holeId: VertexId) =
+        if holeId >= problem.Hole.Length then
+            // Check a possible back edge
+            match Map.tryFind (prevFigId, firstFigId) edgeFromVertexMap with
+            | None -> Seq.singleton partialMatch
+            | Some backEdge ->
+                let holeSeg = holeSegments.[holeId-1]
+                if edgeLengthBad backEdge holeSeg then
+                    Seq.empty
+                else
+                    Seq.singleton partialMatch
+        else
+        let freeIncident = Map.find prevFigId figAdjMap
+                           |> List.filter (fun figId -> not (Option.isSome partialMatch.[figId]))
+        freeIncident
+        |> Seq.ofList
+        |> Seq.filter (fun figId ->
+            let holeSeg = holeSegments.[holeId-1]
+            let figEdgeId = Map.find (prevFigId, figId) edgeFromVertexMap
+            not (edgeLengthBad figEdgeId holeSeg))
+        |> Seq.collect (fun figId ->
+            let partialMatch = Array.copy partialMatch
+            partialMatch.[figId] <- Some holeId
+            placeFigVertex partialMatch firstFigId figId (holeId + 1))
+    // Place the first
+    { 0..problem.Figure.Vertices.Length-1 }
+    |> Seq.collect (fun firstFigId ->
+        let partialMatch = Array.init problem.Figure.Vertices.Length (fun _ -> None)
+        partialMatch.[firstFigId] <- Some 0
+        placeFigVertex partialMatch firstFigId firstFigId 1)
+
+
+    
+
+let vertexMatchSolve (problem: Problem) (bestDislikes: option<int>) (writeSolution: Model.Figure -> unit) =
+    // TODO: Relax for interior solver
+    if problem.Hole.Length <> problem.Figure.Vertices.Length  then
+        // Perfect match not possible
+        printfn $"Matcher can't solve this (#hole = {problem.Hole.Length}, #fig vertices = {problem.Figure.Vertices.Length})"
+        ()
+    else
+        let isValid = Penalty.isValid problem
+        let dislikes = Penalty.dislikes problem
+        let solution =
+            vertexMatchSequence problem
+            |> Seq.tryPick (fun partialMatch ->
+                let figure = {
+                    problem.Figure with
+                        Vertices =
+                            partialMatch 
+                            |> Array.map (function
+                                | None -> failwith "NotImplemented: interior vertices"
+                                | Some holeId -> problem.Hole.[holeId])
+                    }
+                printfn "Fig: %A" figure
+                printfn "%s" (Penalty.figurePenaltiesToString problem figure)
+                if isValid figure && dislikes figure = 0 then
+                    Some figure
+                else
+                    None)
+        match solution with
+        | None ->
+            printfn "VertexMatcher failed to find a match"
+        | Some solution -> writeSolution solution
+        
+
+
+
+
+
+
+
+
+
+
+
 // Play with command line arguments
 let problemPath = ref None
 let problemNo = ref None
@@ -9,6 +100,7 @@ let gui = ref false
 let writeToFile = ref false
 let seed = ref (int DateTime.Now.Ticks)
 let solution = ref None
+let matcher = ref false
 
 let argSpecs =
     [ "-pp", ArgType.String (fun p -> problemPath := Some p), "Path to problems"
@@ -18,6 +110,7 @@ let argSpecs =
     ; "-v", ArgType.Unit (fun () -> Util._verbose := true), "Verbose"
     ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
     ; "-sol", ArgType.String (fun sol -> solution := Some sol), "Don't run, but score the input solution to the given problem"
+    ; "-matcher", ArgType.Unit (fun () -> matcher := true), "Solve using Vertex Matcher"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
@@ -70,8 +163,14 @@ let main args =
         printfn "Reading problem file %s" file
         let problem = parseFile file
         let solutionDir = $"{problemPath}/{problemNo}-solutions/"
+        let writeIfTold =
+            if !writeToFile then
+                writeSolution solutionDir problem
+            else
+                printSolution
         match !solution, !gui with
         | Some solFile, _ ->
+            // Score an existing solution
             printfn $"Scoring solution {solFile}:"
             let figure = parseSolutionFile solFile
                         |> figureOfSolution problem
@@ -79,21 +178,21 @@ let main args =
             printfn $"Dislikes: {Penalty.dislikesPenalty problem figure}"
             0
         | _, true ->
+            // Run GUI w normal solver
             GUI.showGui problem (writeSolution solutionDir problem)
-        | _, false ->
-            let writeIfTold =
-                if !writeToFile then
-                    writeSolution solutionDir problem
-                else
-                    printSolution
-            let bestSolution =
-                getBestCurrentSolution solutionDir
-            match bestSolution with
-            | Some 0 ->
-                printfn "Skipping problem %d, which has a 0-solution" problemNo
-            | _ ->
-                FitInHole.solve problem bestSolution writeIfTold
-            0
+        | None, false ->
+        // We want to solve
+        let bestSolution = getBestCurrentSolution solutionDir
+        // match bestSolution with
+        // | Some 0 ->
+        //     printfn "Skipping problem %d, which has a 0-solution" problemNo
+        //     0
+        // | _ ->
+        if !matcher then
+            vertexMatchSolve problem bestSolution writeIfTold
+        else
+            FitInHole.solve problem bestSolution writeIfTold
+        0
     | _ ->
         printfn "Must specify both problem path and problem"
         1
