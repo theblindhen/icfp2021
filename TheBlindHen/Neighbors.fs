@@ -175,13 +175,30 @@ let mirrorAcrossBestVerticalCutLine (problem: Problem) =
 
 let mirrorAcrossRandomHorizontalCutLine (problem: Problem) =
     let rnd = Util.getRandom ()
-    let adj = Graph.adjacencyMatrix problem.Figure
+    let adj = Graph.adjacencyMatrix problem.Figure  
     fun figure ->
         let horizontalCutComponents = Graph.findHorizontalCutComponents adj figure
         if not(List.isEmpty horizontalCutComponents) then
             let (y, components) = horizontalCutComponents.[rnd.Next(horizontalCutComponents.Length)]
             let rndComponent = components.[rnd.Next(components.Length)]
             Some (Transformations.mirrorSelectedVerticiesHorizontally rndComponent y figure)
+        else None
+
+let mirrorAcrossRandomLegalCutLine (problem: Problem) =
+    let rnd = Util.getRandom ()
+    let articulationPairs = Graph.findArticulationPairs problem.Figure
+    let penaltyEdgeLength = Penalty.penaltyEdgeLengthSqSum problem
+
+    fun figure ->
+        if not(List.isEmpty articulationPairs) then
+            let ((cid1,cid2), cutComponents) = articulationPairs.[rnd.Next(articulationPairs.Length)]
+            let (c1,c2) = (problem.Figure.Vertices.[cid1], problem.Figure.Vertices.[cid2])
+            let selection = List.minBy List.length cutComponents
+            let figure = Transformations.mirrorSelectedVerticiesAcrossSegment selection (c1,c2) problem.Figure
+            if penaltyEdgeLength figure = 0.0 then
+                Some (figure)
+            else 
+                None
         else None
 
 let mirrorAcrossBestHorizontalCutLine (problem: Problem) =
@@ -262,7 +279,8 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         constWeight 0.001, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
         constWeight 0.001, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
         constWeight 0.001, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
-        //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
+        // constWeight 0.001, "mirror across random cut segment", mirrorAcrossRandomLegalCutLine problem;
+        // constWeight 0.001, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
         constWeight 4.0, "single step", translateRandomBadVertex problem;
@@ -272,8 +290,7 @@ let balancedCollectionOfNeighbors (problem: Problem) =
 
         constWeight 0.1, "trans full fig", translateFullFigureRandomly problem;
         // 1.0, "trans full fig long", repeatWhileImproving translateFullFigureBest problem;
-        // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
-
+        // constWeight 0.001, "rot full fig", rotateFullFigureAroundRandomPoint problem;
 
         // large transformations that are only active for the first 10 iterations
         stopAfter 0.001 (constWeight 100.0), "trans full fig (long)", mayIncreasePenaltyByFactor 10.0 (translateFullFigureRandomlyLong 10) problem;

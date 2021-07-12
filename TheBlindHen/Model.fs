@@ -125,14 +125,12 @@ let deparseSolution (sol: Solution) : string =
     """{"vertices":[""" + String.concat "," (sol.SolutionVertices |> Array.map (fun c -> $"[{c.X},{c.Y}]")) + """]}"""
 
 let holeSegments (problem: Problem) =
-    match Array.tryLast problem.Hole with
-    | None -> []
-    | Some last ->
-        problem.Hole
-        |> Array.fold (fun (edges, last) cur ->
-            ((last, cur)::edges, cur)) ([], last)
+    match List.ofArray problem.Hole with
+    | [] -> []
+    | hd::_ as lst ->
+        List.foldBack (fun cur (edges, next) ->
+            ((cur, next)::edges, cur)) lst ([], hd)
         |> fst
-        |> List.rev
 
 let figureSegments (fig: Figure) =
     fig.Edges
