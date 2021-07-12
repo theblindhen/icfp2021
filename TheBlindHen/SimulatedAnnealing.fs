@@ -4,7 +4,7 @@ open System
 
 open Model
 
-type GetNeighbor<'state> = 'state -> string * 'state option
+type GetNeighbor<'state> = float * 'state -> string * 'state option
 
 /// Based on https://en.wikipedia.org/wiki/Simulated_annealing.
 /// After passing unit, you get a function that computes the next state, or None
@@ -24,8 +24,9 @@ let generalSimulatedAnnealing
             let e = energyFunction state
             if !i < iterations then
                 i := !i + 1
-                let temperature = temperatureSchedule (float !i / float iterations)
-                match getRandomNeighbor state with
+                let ratio = float !i / float iterations
+                let temperature = temperatureSchedule ratio
+                match getRandomNeighbor (ratio, state) with
                 | desc, Some (state') ->
                     let e' = energyFunction state'
                     if e' <= 0.0 then

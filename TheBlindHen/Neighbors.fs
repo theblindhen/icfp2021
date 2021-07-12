@@ -60,7 +60,7 @@ let translateRandomBadVertex (problem: Problem) =
         | Some idx -> translateRandomCoordOfVertex fig idx
 
 let translateRandomCoordOfVertexMult (problem: Problem) (moves: int) (figure: Figure) (vertexIdx: int) =
-    let getNeighbor = (fun fig ->
+    let getNeighbor = (fun (_, fig) ->
         ("_translateRandomCoordMultiple", translateRandomCoordOfVertex fig vertexIdx))
     // TODO: Temperature control of the local simulated annealing?
     let stepper = Solver.simulatedAnnealingStepper problem getNeighbor moves
@@ -84,6 +84,11 @@ let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let delta = directions.[rnd.Next(directions.Length)]
     Some (Transformations.translateVerticies delta figure)
+
+let translateFullFigureRandomlyLong (problem: Problem) (l: int) (figure: Figure) =
+    let rnd = Util.getRandom ()
+    let (x, y) = directions.[rnd.Next(directions.Length)]
+    Some (Transformations.translateVerticies (x * l, y * l) figure)
 
 let translateFullFigureBest (problem: Problem) = 
     let penalty = Penalty.figurePenalty problem
@@ -215,8 +220,8 @@ let repeatWhileImproving (f: Problem -> (Figure -> option<Figure>)) (problem: Pr
                 if penalty fig' < penalty fig then inner fig' else Some (fig)
         inner fig
 
-let weightedFunChoice (choices: (float * string * ('a -> 'b option)) list) (param: 'a) : string * 'b option =
-    let totalWeight = List.sumBy (fun (w,_,_) -> w) choices
+let weightedFunChoice (choices: ((float -> float) * string * ('a -> 'b option)) list) ((r, a): float * 'a) : string * 'b option =
+    let totalWeight = List.sumBy (fun (w,_,_) -> w r) choices
     let rnd = Util.getRandom ()
     let randomNumber = rnd.NextDouble() * totalWeight
     let rec iter acc =
@@ -225,14 +230,16 @@ let weightedFunChoice (choices: (float * string * ('a -> 'b option)) list) (para
         | [] -> failwith "Nowhere to go?!"
         // Make sure we always pick the last choice, even if there was
         // floating-point imprecision.
-        | [ (_, desc, f) ] -> (desc, f param)
-        | (weight, desc, f) :: tail ->
-            let acc = acc + weight
+        | [ (_, desc, f) ] -> (desc, f a)
+        | (w, desc, f) :: tail ->
+            let acc = acc + w r
             if randomNumber < acc then
-                (desc, f param)
+                (desc, f a)
             else
                 iter acc tail
     iter 0.0 choices
+
+let constWeight (w: float) = fun _ -> w
 
 /// This should be our main neighbors function that takes a balanced approach to
 /// selecting a reasonable number of neighbors of each kind.
@@ -241,19 +248,19 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         // NOTE: partial neighbor functions should preceed total neighbor functions
  
         // Partial neighbor functions
-        0.001, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
-        0.001, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
-        0.001, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
-        0.001, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
+        constWeight 0.001, "rot articulation point", mustImprovePenalty rotateRandomArticulationPoint problem;
+        constWeight 0.001, "mirror vertical cut (try all)", mirrorAcrossBestVerticalCutLine problem;
+        constWeight 0.001, "mirror horizontal cut (try all)", mirrorAcrossBestHorizontalCutLine problem;
+        constWeight 0.001, "rot full fig (try all)", rotateFullFigureAroundBestPoint problem;
         //1.0, "rot articulation pntset", rotateRandomArticulationPointSet problem;
 
         // Total neighbor functions
-        4.0, "single step", translateRandomBadVertex problem;
+        constWeight 4.0, "single step", translateRandomBadVertex problem;
         // 1.5, "10 steps", translateRandomBadVertexMultiple problem 10;
         // 0.5, "25 steps", translateRandomBadVertexMultiple problem 25;
         // 0.2, "50 steps", translateRandomBadVertexMultiple problem 50;
 
-        0.1, "trans full fig", translateFullFigureRandomly problem;
+        constWeight 0.1, "trans full fig", translateFullFigureRandomly problem;
         // 1.0, "trans full fig long", repeatWhileImproving translateFullFigureBest problem;
         // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
     ]
