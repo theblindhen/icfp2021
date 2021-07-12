@@ -128,6 +128,9 @@ let segmentLengthSq ((p1, p2): Segment) =
     let dx, dy = p1.X - p2.X, p1.Y - p2.Y
     dx*dx + dy*dy
 
+let segmentLength (seg: Segment) =
+    segmentLengthSq seg |> float |> sqrt
+
 /// sort segment coordinates in increasing order of their Y-coordinate, then X-coordinate
 let sortSegment ((c1,c2): Segment) : Segment =
     if c2.Y < c1.Y || (c2.Y = c1.Y && c2.X < c1.X) then
