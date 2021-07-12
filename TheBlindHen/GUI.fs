@@ -321,33 +321,6 @@ module MVU =
                         if evt.Route = Avalonia.Interactivity.RoutingStrategies.Tunnel then
                             dispatch (CanvasReleased (evt.GetPosition null)))
                     Canvas.children (
-                        (
-                            figure.Edges
-                            |> Array.toList
-                            |> List.mapi (fun edgeIdx (s,t) ->
-                                let sc, tc = vs.[s], vs.[t]
-                                let outsideHolePenalty = segmentOutsideHole (sc, tc)
-                                let edgeLengthPenalty = edgeLengthExcessSqSigned edgeIdx (sc, tc) 
-                                let color =
-                                    if edgeLengthPenalty < -0.0 then
-                                        "#FFAAAA" // Edge too short
-                                    else if edgeLengthPenalty > 0.0 then
-                                        "#550000" // Edge too long
-                                    else
-                                        if outsideHolePenalty > 0.0 then "#00FFFF"
-                                        else if outsideHolePenalty < -0.0 then
-                                            // Negative penalty: should never happen!
-                                            "#FF0000"
-                                        else
-                                            "#88FF88"
-                                Line.create [
-                                    Line.startPoint (float sc.X * scale, float sc.Y * scale)
-                                    Line.endPoint (float tc.X * scale, float tc.Y * scale)
-                                    Line.strokeThickness 2.0
-                                    Line.stroke color
-                                ] :> Avalonia.FuncUI.Types.IView
-                            )
-                        ) @
                         (if state.ShowArticulationPoints then
                             figure.Vertices
                             |> Array.mapi (fun i c -> (i, c))
@@ -419,6 +392,33 @@ module MVU =
                                     Line.endPoint (float t.X * scale, float t.Y * scale)
                                     Line.strokeThickness 2.0
                                     Line.stroke "#000000"
+                                ] :> Avalonia.FuncUI.Types.IView
+                            )
+                        ) @
+                        (
+                            figure.Edges
+                            |> Array.toList
+                            |> List.mapi (fun edgeIdx (s,t) ->
+                                let sc, tc = vs.[s], vs.[t]
+                                let outsideHolePenalty = segmentOutsideHole (sc, tc)
+                                let edgeLengthPenalty = edgeLengthExcessSqSigned edgeIdx (sc, tc) 
+                                let color =
+                                    if edgeLengthPenalty < -0.0 then
+                                        "#FFAAAA" // Edge too short
+                                    else if edgeLengthPenalty > 0.0 then
+                                        "#550000" // Edge too long
+                                    else
+                                        if outsideHolePenalty > 0.0 then "#00FFFF"
+                                        else if outsideHolePenalty < -0.0 then
+                                            // Negative penalty: should never happen!
+                                            "#FF0000"
+                                        else
+                                            "#88FF88"
+                                Line.create [
+                                    Line.startPoint (float sc.X * scale, float sc.Y * scale)
+                                    Line.endPoint (float tc.X * scale, float tc.Y * scale)
+                                    Line.strokeThickness 2.0
+                                    Line.stroke color
                                 ] :> Avalonia.FuncUI.Types.IView
                             )
                         )
