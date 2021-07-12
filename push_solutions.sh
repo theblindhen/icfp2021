@@ -5,7 +5,7 @@ if [ -z $APIKEY ]; then
 fi
 for i in {1..132}; do
     if [ -d problems/$i-solutions ]; then
-        if [ -z "$(ls problems/$i-solutions)" ]; then
+        if [ -n "$(ls problems/$i-solutions)" ]; then
             SMALLEST=$(cd problems/$i-solutions/; ls * | sort -n | head -1)
             if [ ! -f problems/$i-solutions/$SMALLEST.submitted ]; then
                 echo "Submitting $i-solutions/$SMALLEST"
