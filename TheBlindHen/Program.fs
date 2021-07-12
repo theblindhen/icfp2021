@@ -16,6 +16,7 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         |> Array.map (fun (min, max) -> sqrt(min), sqrt(max))
 
     let freeIncident (partialMatch: int option array) (startId: VertexId) (maxDepth: int) =
+        let usefulEndpoint = Array.map Option.isNone partialMatch 
         let nextSeq visited vertexId =
             Map.find vertexId figAdjMap
             |> Seq.ofList 
@@ -37,7 +38,7 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
                             |> Seq.map (fun (next, visited) ->
                                 (next::pathRev, visited)))
                 Seq.concat [lvl; nextLevel (i+1) nextLvl]
-        let visited = Array.init partialMatch.Length (fun _ -> false)
+        let visited = Array.init usefulEndpoint.Length (fun _ -> false)
         visited.[startId] <- true
         let firstLvl =
             nextSeq visited startId
@@ -47,12 +48,17 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         |> Seq.filter(fun (path, visited) ->
             match path with
             | [] -> failwith "err"
-            | last::_ -> Option.isNone partialMatch.[last]
-            )
-        |> Seq.map (fst >> List.rev)
+            | last::_ -> usefulEndpoint.[last])
+        |> Seq.map (fun (path, _) ->
+            match path with
+            | [] -> failwith "err 1.5"
+            | last::_ ->
+            usefulEndpoint.[last] <- false
+            path)
+        |> Seq.map List.rev
 
     let nextCandidates (partialMatch: int option array) (prevFigId: VertexId) (holeSegLen: float) =
-        freeIncident partialMatch prevFigId 2 // TODO: maxDepth
+        freeIncident partialMatch prevFigId 5 // TODO: maxDepth
         |> Seq.filter (fun path ->
             match path with
             | [] -> failwith "err2"
@@ -191,6 +197,7 @@ let writeToFile = ref false
 let seed = ref (int DateTime.Now.Ticks)
 let solution = ref None
 let matcher = ref false
+let force = ref false
 
 let argSpecs =
     [ "-pp", ArgType.String (fun p -> problemPath := Some p), "Path to problems"
@@ -201,6 +208,7 @@ let argSpecs =
     ; "-seed", ArgType.Int (fun s -> seed := s), "Randomness seed to use"
     ; "-sol", ArgType.String (fun sol -> solution := Some sol), "Don't run, but score the input solution to the given problem"
     ; "-matcher", ArgType.Unit (fun () -> matcher := true), "Solve using Vertex Matcher"
+    ; "-force", ArgType.Unit (fun () -> force:= true), "Solve even though we already have 0"
     ] |> List.map (fun (sh, ty, desc) -> ArgInfo.Create(sh, ty, desc))
       |> Array.ofList
 
@@ -273,8 +281,8 @@ let main args =
         | None, false ->
         // We want to solve
         let bestSolution = getBestCurrentSolution solutionDir
-        match bestSolution with
-        | Some 0 ->
+        match !force, bestSolution with
+        | false, Some 0 ->
             printfn "Skipping problem %d, which has a 0-solution" problemNo
             0
         | _ ->
