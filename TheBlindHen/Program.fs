@@ -11,36 +11,101 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
             [| ((fromId, toId), edgeId); ((toId, fromId), edgeId) |])
         |> Map.ofArray
     let holeSegments = holeSegments problem |> Array.ofList
-    printfn "Holes = %A" holeSegments
-    let edgeLengthBad =
-        let excess = Penalty.edgeLengthExcessSqSigned problem
-        fun (figEdgeId: int) (edge: Geometry.Segment) ->
-            let pen = excess figEdgeId edge
-            pen <> 0.0
+    let edgeLengthRanges =
+        Penalty.problemEdgeLengthSqRanges problem
+        |> Array.map (fun (min, max) -> sqrt(min), sqrt(max))
+
+    let freeIncident (partialMatch: int option array) (startId: VertexId) (maxDepth: int) =
+        let nextSeq visited vertexId =
+            Map.find vertexId figAdjMap
+            |> Seq.ofList 
+            |> Seq.map (fun next ->
+                let visited = Array.copy visited
+                visited.[next] <- true
+                (next, visited))
+        let rec nextLevel i lvl =
+            if i >= maxDepth then
+                lvl
+            else
+                let nextLvl =
+                    lvl
+                    |> Seq.collect (fun (pathRev, visited) ->
+                        match pathRev with
+                        | [] -> failwith "err"
+                        | last::_ ->
+                            nextSeq visited last
+                            |> Seq.map (fun (next, visited) ->
+                                (next::pathRev, visited)))
+                Seq.concat [lvl; nextLevel (i+1) nextLvl]
+        let visited = Array.init partialMatch.Length (fun _ -> false)
+        visited.[startId] <- true
+        let firstLvl =
+            nextSeq visited startId
+            |> Seq.map (fun (next, visited) ->
+                ([next], visited))
+        nextLevel 1 firstLvl
+        |> Seq.filter(fun (path, visited) ->
+            match path with
+            | [] -> failwith "err"
+            | last::_ -> Option.isNone partialMatch.[last]
+            )
+        |> Seq.map (fst >> List.rev)
+
+    let nextCandidates (partialMatch: int option array) (prevFigId: VertexId) (holeSegLen: float) =
+        freeIncident partialMatch prevFigId 2 // TODO: maxDepth
+        |> Seq.filter (fun path ->
+            match path with
+            | [] -> failwith "err2"
+            | [figId] ->
+                // If one edge, check min and aax
+                let figEdgeId = Map.find (prevFigId, figId) edgeFromVertexMap
+                let min, max = edgeLengthRanges.[figEdgeId]
+                min <= holeSegLen && holeSegLen <= max
+            | _ ->
+                // Check the max length of the path is sufficient
+                let maxPathLen =
+                    List.pairwise (prevFigId::path)
+                    |> List.sumBy (fun (prev, next) ->
+                        let figEdgeId = Map.find (prev, next) edgeFromVertexMap
+                        let _, max = edgeLengthRanges.[figEdgeId]
+                        max)
+                holeSegLen <= maxPathLen)
+        |> Seq.map List.last
+
     let rec placeFigVertex (partialMatch: int option array) (firstFigId: VertexId) (prevFigId: VertexId) (holeId: VertexId) =
         if holeId >= problem.Hole.Length then
             // Check a possible back edge
             match Map.tryFind (prevFigId, firstFigId) edgeFromVertexMap with
             | None -> Seq.singleton partialMatch
             | Some backEdge ->
-                let holeSeg = holeSegments.[holeId-1]
-                if edgeLengthBad backEdge holeSeg then
-                    Seq.empty
-                else
+                let holeSegLen = Geometry.segmentLength holeSegments.[holeId-1]
+                let min, max = edgeLengthRanges.[backEdge]
+                if min <= holeSegLen && holeSegLen <= max then
                     Seq.singleton partialMatch
+                else
+                    Seq.empty
         else
-        let freeIncident = Map.find prevFigId figAdjMap
-                           |> List.filter (fun figId -> not (Option.isSome partialMatch.[figId]))
-        freeIncident
-        |> Seq.ofList
-        |> Seq.filter (fun figId ->
-            let holeSeg = holeSegments.[holeId-1]
-            let figEdgeId = Map.find (prevFigId, figId) edgeFromVertexMap
-            not (edgeLengthBad figEdgeId holeSeg))
+        let holeSegLen = Geometry.segmentLength holeSegments.[holeId-1]
+        nextCandidates partialMatch prevFigId holeSegLen 
         |> Seq.collect (fun figId ->
-            let partialMatch = Array.copy partialMatch
-            partialMatch.[figId] <- Some holeId
-            placeFigVertex partialMatch firstFigId figId (holeId + 1))
+            let adj = Map.find figId figAdjMap
+            // For each adj, if it's already matched, the edge needs to conform
+            let conforms =
+                adj
+                |> List.filter (fun adjId -> Option.isSome partialMatch.[adjId])
+                |> List.forall (fun adjId ->
+                    let adjEdgeId = Map.find (figId, adjId) edgeFromVertexMap
+                    let min, max = edgeLengthRanges.[adjEdgeId]
+                    let forcedSeg = (problem.Hole.[holeId],
+                                     problem.Hole.[Option.get partialMatch.[adjId]])
+                    let forcedLen = Geometry.segmentLength forcedSeg
+                    min <= forcedLen && forcedLen <= max)
+            if conforms then
+                let partialMatch = Array.copy partialMatch
+                partialMatch.[figId] <- Some holeId
+                placeFigVertex partialMatch firstFigId figId (holeId + 1)
+            else
+                Seq.empty)
     // Place the first
     { 0..problem.Figure.Vertices.Length-1 }
     |> Seq.collect (fun firstFigId ->
@@ -48,31 +113,56 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         partialMatch.[firstFigId] <- Some 0
         placeFigVertex partialMatch firstFigId firstFigId 1)
 
+let simulateOnFreePoints (problem: Problem) (figure: Figure) (freePoints: list<int>) =
+    let freePoints = Array.ofList freePoints
+    /// Take a random vertex and take a single move in a random direction
+    let translateRandomFreeVertex (figure: Figure) =
+        let rnd = Util.getRandom ()
+        let vertexId = freePoints.[rnd.Next(freePoints.Length)]
+        Neighbors.translateRandomCoordOfVertex figure vertexId
+    let getNeighbor = (fun (_, fig) ->
+        ("_translateRandomFreeVertex", translateRandomFreeVertex fig))
+    let stepper = Solver.simulatedAnnealingStepper problem getNeighbor 10_000
+    Some (Solver.runSolver stepper figure)
 
     
 
 let vertexMatchSolve (problem: Problem) (bestDislikes: option<int>) (writeSolution: Model.Figure -> unit) =
-    // TODO: Relax for interior solver
-    if problem.Hole.Length <> problem.Figure.Vertices.Length  then
+    if problem.Hole.Length > problem.Figure.Vertices.Length  then
         // Perfect match not possible
         printfn $"Matcher can't solve this (#hole = {problem.Hole.Length}, #fig vertices = {problem.Figure.Vertices.Length})"
         ()
     else
+        printfn $"Matcher tries free points {problem.Figure.Vertices.Length - problem.Hole.Length}"
         let isValid = Penalty.isValid problem
         let dislikes = Penalty.dislikes problem
         let solution =
             vertexMatchSequence problem
-            |> Seq.tryPick (fun partialMatch ->
-                let figure = {
-                    problem.Figure with
+            |> Seq.map (fun partialMatch -> 
+                let fig = 
+                    { problem.Figure with
                         Vertices =
                             partialMatch 
-                            |> Array.map (function
-                                | None -> failwith "NotImplemented: interior vertices"
-                                | Some holeId -> problem.Hole.[holeId])
-                    }
-                printfn "Fig: %A" figure
-                printfn "%s" (Penalty.figurePenaltiesToString problem figure)
+                            |> Array.mapi (fun i isMatched ->
+                                match isMatched with
+                                | None -> problem.Figure.Vertices.[i]
+                                | Some holeId -> problem.Hole.[holeId]) }
+                let freePoints =
+                    partialMatch
+                    |> Array.toList
+                    |> List.indexed
+                    |> List.filter (fun (_, isMatched) -> Option.isNone isMatched)
+                    |> List.map fst
+                fig, freePoints
+                )
+            |> Seq.tryPick (fun (figure, freePoints) ->
+                let figure = 
+                    if List.isEmpty freePoints then
+                        figure
+                    else
+                        match simulateOnFreePoints problem figure freePoints with
+                        | None -> figure
+                        | Some sol -> sol
                 if isValid figure && dislikes figure = 0 then
                     Some figure
                 else
@@ -183,11 +273,11 @@ let main args =
         | None, false ->
         // We want to solve
         let bestSolution = getBestCurrentSolution solutionDir
-        // match bestSolution with
-        // | Some 0 ->
-        //     printfn "Skipping problem %d, which has a 0-solution" problemNo
-        //     0
-        // | _ ->
+        match bestSolution with
+        | Some 0 ->
+            printfn "Skipping problem %d, which has a 0-solution" problemNo
+            0
+        | _ ->
         if !matcher then
             vertexMatchSolve problem bestSolution writeIfTold
         else
