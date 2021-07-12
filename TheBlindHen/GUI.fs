@@ -41,6 +41,11 @@ let stepSolverWithStopAndDebug problem =
             | ChoseNeighbor desc -> printfn $"Chose move by {desc}\n\t{figurePenaltiesToString result}"
             (result, penalty)
 
+let addPenalty problem figure =
+    let figurePenalties = Penalty.figurePenaltiesToString problem figure
+    printfn "Figure penalties: %s" figurePenalties
+    (figure, Penalty.figurePenalty problem figure)
+
 module MVU =
     open Elmish
     open Avalonia.Controls
@@ -77,9 +82,9 @@ module MVU =
         let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
         {
             Problem = problem
-            History = ResizeArray([problem.Figure, infinity])
+            History = ResizeArray([addPenalty problem problem.Figure])
             Index = 0
-            Scale = 0.9 * WINDOWSIZE / float (max maxCoord.X maxCoord.Y)
+            Scale = 0.8 * WINDOWSIZE / float (max maxCoord.X maxCoord.Y)
             Selection = []
             Tool = Move
             InProgress = None
@@ -94,10 +99,10 @@ module MVU =
 
     // adds a new figure based on the current figure, if the current figure
     // is the last figure in the history
-    let applyIfLast (f: Model.Figure -> Model.Figure) (state: State): State =
+    let applyIfLast (f: Model.Figure -> (Model.Figure * float)) (state: State): State =
         if state.Index = state.History.Count - 1 then
             let newFig = f (fst state.History.[state.Index])
-            state.History.Add (newFig, infinity)
+            state.History.Add newFig
             { state with Index = state.Index + 1 }
         else state
 
@@ -157,14 +162,14 @@ module MVU =
             match state.Tool, state.InProgress with
             | Move, Some ((x1, y1), _) ->
                 let dx, dy = x2 - x1, y2 - y1
-                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy)) state
+                let translatedState = applyIfLast (Transformations.translateSelectedVerticies state.Selection (dx, dy) >> addPenalty state.Problem) state
                 { translatedState with InProgress = None }, Cmd.none
             | Rotate, Some ((x1, y1), _) ->
                 if x1 = x2 && y1 = y2 then
                     { state with Origo = pointToCoord p; InProgress = None }, Cmd.none
                 else
                     let dy = y2 - y1
-                    let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy)) state
+                    let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) >> addPenalty state.Problem) state
                     { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
         | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
@@ -315,15 +320,17 @@ module MVU =
                                 let outsideHolePenalty = segmentOutsideHole (sc, tc)
                                 let edgeLengthPenalty = edgeLengthExcessSqSigned edgeIdx (sc, tc) 
                                 let color =
-                                    if outsideHolePenalty > Geometry.EPSILON then "#00FFFF"
-                                    else if outsideHolePenalty < -Geometry.EPSILON then "#E74C3C"
+                                    if outsideHolePenalty > 0.0 then "#00FFFF"
+                                    else if outsideHolePenalty < -0.0 then
+                                        // Negative penalty: should never happen!
+                                        "#FF0000"
                                     else
-                                        if edgeLengthPenalty < -Geometry.EPSILON then
-                                            "#88FF88"
-                                        else if edgeLengthPenalty > Geometry.EPSILON then
-                                            "#00AA00"
+                                        if edgeLengthPenalty < -0.0 then
+                                            "#FFAAAA" // Edge too short
+                                        else if edgeLengthPenalty > 0.0 then
+                                            "#550000" // Edge too long
                                         else
-                                            "#00FF00"
+                                            "#88FF88"
                                 Line.create [
                                     Line.startPoint (float sc.X * scale, float sc.Y * scale)
                                     Line.endPoint (float tc.X * scale, float tc.Y * scale)
