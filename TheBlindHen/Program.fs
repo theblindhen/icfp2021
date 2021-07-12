@@ -118,6 +118,7 @@ let vertexMatchSolve (problem: Problem) (bestDislikes: option<int>) (writeSoluti
         printfn $"Matcher can't solve this (#hole = {problem.Hole.Length}, #fig vertices = {problem.Figure.Vertices.Length})"
         ()
     else
+        printfn $"Matcher tries free points {problem.Figure.Vertices.Length - problem.Hole.Length}"
         let isValid = Penalty.isValid problem
         let dislikes = Penalty.dislikes problem
         let solution =
@@ -142,10 +143,8 @@ let vertexMatchSolve (problem: Problem) (bestDislikes: option<int>) (writeSoluti
             |> Seq.tryPick (fun (figure, freePoints) ->
                 let figure = 
                     if List.isEmpty freePoints then
-                        printfn "No free points"
                         figure
                     else
-                        printfn "%d free points" (freePoints.Length)
                         match simulateOnFreePoints problem figure freePoints with
                         | None -> figure
                         | Some sol -> sol
