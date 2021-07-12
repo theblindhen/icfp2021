@@ -11,32 +11,35 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
             [| ((fromId, toId), edgeId); ((toId, fromId), edgeId) |])
         |> Map.ofArray
     let holeSegments = holeSegments problem |> Array.ofList
-    printfn "Holes = %A" holeSegments
-    let edgeLengthBad =
-        let excess = Penalty.edgeLengthExcessSqSigned problem
-        fun (figEdgeId: int) (edge: Geometry.Segment) ->
-            let pen = excess figEdgeId edge
-            pen <> 0.0
+    let edgeLengthRanges =
+        Penalty.problemEdgeLengthSqRanges problem
+        |> Array.map (fun (min, max) -> sqrt(min), sqrt(max))
+
+    let nextCandidates (partialMatch: int option array) (prevFigId: VertexId) (holeSegLen: float) =
+        let freeIncident = Map.find prevFigId figAdjMap
+                           |> List.filter (fun figId -> not (Option.isSome partialMatch.[figId]))
+        freeIncident
+        |> Seq.ofList
+        |> Seq.filter (fun figId ->
+            let figEdgeId = Map.find (prevFigId, figId) edgeFromVertexMap
+            let min, max = edgeLengthRanges.[figEdgeId]
+            min <= holeSegLen && holeSegLen <= max)
+
     let rec placeFigVertex (partialMatch: int option array) (firstFigId: VertexId) (prevFigId: VertexId) (holeId: VertexId) =
         if holeId >= problem.Hole.Length then
             // Check a possible back edge
             match Map.tryFind (prevFigId, firstFigId) edgeFromVertexMap with
             | None -> Seq.singleton partialMatch
             | Some backEdge ->
-                let holeSeg = holeSegments.[holeId-1]
-                if edgeLengthBad backEdge holeSeg then
-                    Seq.empty
-                else
+                let holeSegLen = Geometry.segmentLength holeSegments.[holeId-1]
+                let min, max = edgeLengthRanges.[backEdge]
+                if min <= holeSegLen && holeSegLen <= max then
                     Seq.singleton partialMatch
+                else
+                    Seq.empty
         else
-        let freeIncident = Map.find prevFigId figAdjMap
-                           |> List.filter (fun figId -> not (Option.isSome partialMatch.[figId]))
-        freeIncident
-        |> Seq.ofList
-        |> Seq.filter (fun figId ->
-            let holeSeg = holeSegments.[holeId-1]
-            let figEdgeId = Map.find (prevFigId, figId) edgeFromVertexMap
-            not (edgeLengthBad figEdgeId holeSeg))
+        let holeSegLen = Geometry.segmentLength holeSegments.[holeId-1]
+        nextCandidates partialMatch prevFigId holeSegLen 
         |> Seq.collect (fun figId ->
             let partialMatch = Array.copy partialMatch
             partialMatch.[figId] <- Some holeId
