@@ -53,3 +53,20 @@ let mirrorSelectedVerticiesVertically (selection: int list) (x: int) =
 
 let mirrorSelectedVerticiesHorizontally (selection: int list) (y: int) =
     mapSelectedVertices selection (fun c -> Model.Coord(c.X, -c.Y + 2 * y))
+
+/// Reflect selected vertices across the line through c1 and c2
+/// using the answer from https://stackoverflow.com/questions/8954326/how-to-calculate-the-mirror-point-along-a-line
+let mirrorSelectedVerticiesAcrossSegment (selection: int list) (c1 : Model.Coord, c2 : Model.Coord) =
+    // represent the line by Ax + By + C = 0
+    let (a,b) = (c2.Y - c1.Y, -(c2.X - c1.X))
+    let c = -a * c1.X - b * c1.Y
+    let m = sqrt (float (a * a + b * b))
+    let (a',b',c') = (float a / m, float b / m, float c / m)
+
+    let mirror (p : Model.Coord) =
+        let d = a' * float p.X + b' * float p.Y + c'
+        let px' = float p.X - 2.0 * a' * d
+        let py' = float p.Y - 2.0 * b' * d
+        Model.Coord (int (round px'), int (round py')) 
+
+    mapSelectedVertices selection mirror

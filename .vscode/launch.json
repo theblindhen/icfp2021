@@ -11,7 +11,7 @@
             "request": "launch",
             "preLaunchTask": "build_debug",
             "program": "${workspaceFolder}/TheBlindHen/bin/Debug/net5.0/TheBlindHen.dll",
-            "args": [],
+            "args": ["-g", "-pp", "problems", "-p", "20"],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"

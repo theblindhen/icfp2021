@@ -46,7 +46,6 @@ let getArticulationPoints (figure : Figure) =
     dfs 0 0
     (adj, articulationPoint)
 
-
 let connectedComponentsWithoutVertices (adj: bool[,]) (vs: VertexId list) =
     let noVertices = Array2D.length1 adj
     let visited : bool array = Array.create noVertices false
@@ -69,6 +68,18 @@ let connectedComponentsWithoutVertices (adj: bool[,]) (vs: VertexId list) =
 
     Map.values components
     |> Set.toList
+
+let findArticulationPairs (figure : Figure) : ((VertexId * VertexId) * (VertexId list list)) list =
+    let mutable articulationPairs : ((VertexId * VertexId) * (VertexId list list)) list = List.Empty
+    let adj : bool[,] = adjacencyMatrix figure
+
+    for i in 0..figure.Vertices.Length - 1 do
+        for j in 0..figure.Vertices.Length - 1 do
+            let connectedComponents = connectedComponentsWithoutVertices adj [i; j]
+            if connectedComponents.Length > 1 then
+                articulationPairs <- ((i,j),connectedComponents) :: articulationPairs
+
+    articulationPairs
 
 let findVerticalCutComponents (adj: bool[,]) (figure: Figure) =
     figure.Vertices
