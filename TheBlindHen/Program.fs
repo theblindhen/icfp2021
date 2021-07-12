@@ -88,9 +88,24 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         let holeSegLen = Geometry.segmentLength holeSegments.[holeId-1]
         nextCandidates partialMatch prevFigId holeSegLen 
         |> Seq.collect (fun figId ->
-            let partialMatch = Array.copy partialMatch
-            partialMatch.[figId] <- Some holeId
-            placeFigVertex partialMatch firstFigId figId (holeId + 1))
+            let adj = Map.find figId figAdjMap
+            // For each adj, if it's already matched, the edge needs to conform
+            let conforms =
+                adj
+                |> List.filter (fun adjId -> Option.isSome partialMatch.[adjId])
+                |> List.forall (fun adjId ->
+                    let adjEdgeId = Map.find (figId, adjId) edgeFromVertexMap
+                    let min, max = edgeLengthRanges.[adjEdgeId]
+                    let forcedSeg = (problem.Hole.[holeId],
+                                     problem.Hole.[Option.get partialMatch.[adjId]])
+                    let forcedLen = Geometry.segmentLength forcedSeg
+                    min <= forcedLen && forcedLen <= max)
+            if conforms then
+                let partialMatch = Array.copy partialMatch
+                partialMatch.[figId] <- Some holeId
+                placeFigVertex partialMatch firstFigId figId (holeId + 1)
+            else
+                Seq.empty)
     // Place the first
     { 0..problem.Figure.Vertices.Length-1 }
     |> Seq.collect (fun firstFigId ->
