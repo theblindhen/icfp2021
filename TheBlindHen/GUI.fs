@@ -329,15 +329,15 @@ module MVU =
                                 let outsideHolePenalty = segmentOutsideHole (sc, tc)
                                 let edgeLengthPenalty = edgeLengthExcessSqSigned edgeIdx (sc, tc) 
                                 let color =
-                                    if outsideHolePenalty > 0.0 then "#00FFFF"
-                                    else if outsideHolePenalty < -0.0 then
-                                        // Negative penalty: should never happen!
-                                        "#FF0000"
+                                    if edgeLengthPenalty < -0.0 then
+                                        "#FFAAAA" // Edge too short
+                                    else if edgeLengthPenalty > 0.0 then
+                                        "#550000" // Edge too long
                                     else
-                                        if edgeLengthPenalty < -0.0 then
-                                            "#FFAAAA" // Edge too short
-                                        else if edgeLengthPenalty > 0.0 then
-                                            "#550000" // Edge too long
+                                        if outsideHolePenalty > 0.0 then "#00FFFF"
+                                        else if outsideHolePenalty < -0.0 then
+                                            // Negative penalty: should never happen!
+                                            "#FF0000"
                                         else
                                             "#88FF88"
                                 Line.create [
