@@ -58,7 +58,7 @@ let vertexMatchSequence (problem: Problem) : (int option array) seq =
         |> Seq.map List.rev
 
     let nextCandidates (partialMatch: int option array) (prevFigId: VertexId) (holeSegLen: float) =
-        freeIncident partialMatch prevFigId 5 // TODO: maxDepth
+        freeIncident partialMatch prevFigId 3 // TODO: maxDepth
         |> Seq.filter (fun path ->
             match path with
             | [] -> failwith "err2"
