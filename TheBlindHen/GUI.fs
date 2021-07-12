@@ -67,6 +67,7 @@ module MVU =
 
         ShowArticulationPoints: bool
         ShowCutLines: bool
+        RotateLegally: bool
     }
 
     type Msg =
@@ -77,6 +78,7 @@ module MVU =
         | CanvasMoved of Avalonia.Point
         | ToggleShowArticulationPoints of bool
         | ToggleShowCutLines of bool
+        | ToggleRotateLegally of bool
 
     let init (problem: Model.Problem): State * Cmd<Msg> =
         let maxCoord = Array.maxBy (fun (c: Model.Coord) -> max c.X c.Y) problem.Figure.Vertices
@@ -92,6 +94,7 @@ module MVU =
 
             ShowArticulationPoints = false
             ShowCutLines = false
+            RotateLegally = true
         },
         Cmd.OfFunc.attempt (fun problem ->
                 stepperGlobalVar := Some (stepSolverWithStopAndDebug problem)
@@ -168,8 +171,8 @@ module MVU =
                 if x1 = x2 && y1 = y2 then
                     { state with Origo = pointToCoord p; InProgress = None }, Cmd.none
                 else
-                    let dy = y2 - y1
-                    let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) >> addPenalty state.Problem) state
+                    let angle = float (y2 - y1) * state.Scale * 0.5
+                    let translatedState = applyIfLast (Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo angle >> addPenalty state.Problem) state
                     { translatedState with InProgress = None }, Cmd.none
             | _ -> state, Cmd.none
         | SelectTool tool -> { state with Tool = tool; InProgress = None }, Cmd.none
@@ -185,8 +188,8 @@ module MVU =
                 let (dx, dy) = (x2 - x1, y2 - y1)
                 Transformations.translateSelectedVerticies state.Selection (dx, dy) figure
             | Rotate, Some ((x1, y1), (x2, y2)) ->
-                let dy = y2 - y1
-                Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo (float dy) figure
+                let angle = float (y2 - y1) * state.Scale * 0.5
+                Transformations.rotateSelectedVerticiesAroundByAngle state.Selection state.Origo angle figure
             | _ -> figure
         let vs = shownFigure.Vertices
         let holeSegments = Model.holeSegments state.Problem
@@ -253,7 +256,7 @@ module MVU =
                 ]
                 UniformGrid.create [
                     UniformGrid.dock Dock.Bottom
-                    UniformGrid.columns 2
+                    UniformGrid.columns 3
                     UniformGrid.children [
                         CheckBox.create [
                             CheckBox.content "Show articulation points"
@@ -266,6 +269,12 @@ module MVU =
                             CheckBox.isChecked state.ShowCutLines
                             CheckBox.onChecked (fun evt -> dispatch (ToggleShowCutLines true))
                             CheckBox.onUnchecked (fun evt -> dispatch (ToggleShowCutLines false))
+                        ]
+                        CheckBox.create [
+                            CheckBox.content "(not implemented)"
+                            CheckBox.isChecked state.RotateLegally
+                            CheckBox.onChecked (fun evt -> dispatch (ToggleRotateLegally true))
+                            CheckBox.onUnchecked (fun evt -> dispatch (ToggleRotateLegally false))
                         ]
                     ]
                 ]
