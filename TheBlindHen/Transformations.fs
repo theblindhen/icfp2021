@@ -23,8 +23,8 @@ let rotateSelectedVerticies (selection: int list) =
 let rotateSelectedVerticiesByAngle (selection: int list) (angle: float)  =
     let rad = angle * (Math.PI / 180.0)
     mapSelectedVertices selection (fun c ->
-        let x' = int(float(c.X) * Math.Cos(rad) - float(c.Y) * Math.Sin(rad))
-        let y' = int(float(c.Y) * Math.Cos(rad) + float(c.X) * Math.Sin(rad))
+        let x' = int(round(float(c.X) * Math.Cos(rad) - float(c.Y) * Math.Sin(rad)))
+        let y' = int(round(float(c.Y) * Math.Cos(rad) + float(c.X) * Math.Sin(rad)))
         Model.Coord(x', y'))
 
 let rotateVerticiesAround (origo: Model.Coord) =
