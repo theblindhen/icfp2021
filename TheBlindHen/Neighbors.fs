@@ -85,7 +85,7 @@ let translateFullFigureRandomly (problem: Problem) (figure: Figure) =
     let delta = directions.[rnd.Next(directions.Length)]
     Some (Transformations.translateVerticies delta figure)
 
-let translateFullFigureRandomlyLong (problem: Problem) (l: int) (figure: Figure) =
+let translateFullFigureRandomlyLong (l: int) (problem: Problem) (figure: Figure) =
     let rnd = Util.getRandom ()
     let (x, y) = directions.[rnd.Next(directions.Length)]
     Some (Transformations.translateVerticies (x * l, y * l) figure)
@@ -240,6 +240,16 @@ let weightedFunChoice (choices: ((float -> float) * string * ('a -> 'b option)) 
     iter 0.0 choices
 
 let constWeight (w: float) = fun _ -> w
+let stopAfter (w: float) f = fun r -> if r > w then 0.0 else f r
+let expDampning (wStart: float) (wEnd: float) = fun r -> (wStart - wEnd) * exp (-r * 100.0) + wEnd
+
+let mayIncreasePenaltyByFactor (factor: float) (f: Problem -> (Figure -> Figure option)) (problem: Problem) =
+    let penalty = Penalty.figurePenalty problem
+    let f = f problem
+    fun fig ->
+        match f fig with
+        | None -> None
+        | Some fig' -> if penalty fig' < factor * penalty fig then Some fig' else None
 
 /// This should be our main neighbors function that takes a balanced approach to
 /// selecting a reasonable number of neighbors of each kind.
@@ -263,5 +273,9 @@ let balancedCollectionOfNeighbors (problem: Problem) =
         constWeight 0.1, "trans full fig", translateFullFigureRandomly problem;
         // 1.0, "trans full fig long", repeatWhileImproving translateFullFigureBest problem;
         // 1.0, "rot full fig", rotateFullFigureAroundRandomPoint problem;
+
+
+        // large transformations that are only active for the first 10 iterations
+        stopAfter 0.001 (constWeight 100.0), "trans full fig (long)", mayIncreasePenaltyByFactor 10.0 (translateFullFigureRandomlyLong 10) problem;
+        stopAfter 0.001 (constWeight 100.0), "rot full fig", mayIncreasePenaltyByFactor 10.0 rotateFullFigureAroundRandomPoint problem;
     ]
-    
