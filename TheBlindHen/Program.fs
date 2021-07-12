@@ -273,11 +273,11 @@ let main args =
         | None, false ->
         // We want to solve
         let bestSolution = getBestCurrentSolution solutionDir
-        // match bestSolution with
-        // | Some 0 ->
-        //     printfn "Skipping problem %d, which has a 0-solution" problemNo
-        //     0
-        // | _ ->
+        match bestSolution with
+        | Some 0 ->
+            printfn "Skipping problem %d, which has a 0-solution" problemNo
+            0
+        | _ ->
         if !matcher then
             vertexMatchSolve problem bestSolution writeIfTold
         else
