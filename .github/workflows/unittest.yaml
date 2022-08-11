@@ -7,10 +7,10 @@ jobs:
       - name: setup-dotnet
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '5.0.x'
+          dotnet-version: '6.0.x'
       - uses: actions/checkout@v2
       - name: dotnet-tests-report
-        uses: zyborg/dotnet-tests-report@v1.4.4
+        uses: zyborg/dotnet-tests-report@v1
         with:
           project_path: UnitTests
           report_name: unittest_report
