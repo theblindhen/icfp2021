@@ -81,7 +81,7 @@ dotnet run -p TheBlindHen
 To build and then run in release mode:
 ```
 dotnet build -c Release
-dotnet exec TheBlindHen/bin/Release/net5.0/TheBlindHen.dll
+dotnet exec TheBlindHen/bin/Release/net6.0/TheBlindHen.dll
 ```
 
 ## Visual Studio Code + F\#
