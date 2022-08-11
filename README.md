@@ -38,9 +38,7 @@ and also made it more fun to interact with the problems.
 
 Install Visual Studio Code, version 1.57 or higher.
 - Arch Linux: `yay -S visual-studio-code-bin gnome-keyring`. Don't use the
-  `code` package: it's outdated at the time of writing this, and the Open VSX
-  version of the C# extension is out of date and needs to be rebuilt from
-  `master`.
+  `code` package as you may end up with outdated versions of the F# extensions.
 - Windows: [https://code.visualstudio.com].
 
 ## Git
@@ -88,15 +86,14 @@ dotnet exec TheBlindHen/bin/Release/net6.0/TheBlindHen.dll
 
 Launch VS Code, open the Extensions pane (Ctrl+Shift+X), and install the
 following extensions:
-- C# (called "powered by Microsoft")
-- [Ionide-fsharp
-extension](https://marketplace.visualstudio.com/items?itemName=Ionide.Ionide-fsharp)
+- C# ("C# for Visual Studio Code (powered by OmniSharp)")
+- [Ionide for F#](https://marketplace.visualstudio.com/items?itemName=Ionide.Ionide-fsharp)
 from the marketplace.
 
 To test that debugging works, place a break point somewhere in `Program.fs:main`
 by clicking the left-hand margin. Click `F#` button on the palette to the
-extreme left of the VSCode window. Click the `Debug` button to the right of the
-`Playground` project. The project should run and execution stop at the
+extreme left of the VSCode window. Click the Play button at the top.
+The project should run and execution stop at the
 breakpoint. By hovering over variables, you'll see their current values, and a
 small control panel will have appeared that allows you to step forward etc.
 

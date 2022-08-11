@@ -65,6 +65,7 @@ TODO
 ## Cross platform GUI libraries
 
 - [Avalonia FuncUI](https://github.com/fsprojects/Avalonia.FuncUI). Allows writing an Elm-style UI (MVU). The documentation for the MVU parts appears to be the source code, and it doesn't cover all of Avalonia's vast API. How big are the dependencies?
+  - We used this library in 2021, and it worked well.
   - has a canvas control that supports free-form drawing ([example](https://github.com/fsprojects/Avalonia.FuncUI/blob/master/src/Examples/Examples.ClockApp/Clock.fs))
   - install Avalonia.FuncUI templates and create a new app using the basic template:
       ```
